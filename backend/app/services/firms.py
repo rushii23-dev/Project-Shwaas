@@ -8,8 +8,10 @@ API shape:
   bbox = west,south,east,north  (lon/lat order)
   SOURCE = VIIRS_SNPP_NRT is the standard near-real-time high-res product.
 """
+import asyncio
 import csv
 import io
+import time
 
 import httpx
 
@@ -18,6 +20,32 @@ from ..config import require_env
 
 FIRMS_BASE = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
 SOURCE = "VIIRS_SNPP_NRT"
+
+# Short-lived cache so /sensors and /hotspots (which fire on the same refresh)
+# share one FIRMS fetch. Keyed by "city_slug:days". Same pattern as sensors.py.
+_FIRMS_CACHE: dict[str, tuple[float, list[dict]]] = {}
+_FIRMS_TTL_S = 90
+_FIRMS_LOCKS: dict[str, "asyncio.Lock"] = {}
+
+
+async def fetch_firms_cached(city: City, days: int = 2) -> list[dict]:
+    """Cached wrapper around fetch_firms. Safe for concurrent callers."""
+    cache_key = f"{city.slug}:{days}"
+
+    def _hit():
+        entry = _FIRMS_CACHE.get(cache_key)
+        return entry[1] if entry and (time.time() - entry[0]) < _FIRMS_TTL_S else None
+
+    if (cached := _hit()) is not None:
+        return cached
+
+    lock = _FIRMS_LOCKS.setdefault(cache_key, asyncio.Lock())
+    async with lock:
+        if (cached := _hit()) is not None:
+            return cached
+        result = await fetch_firms(city, days)
+        _FIRMS_CACHE[cache_key] = (time.time(), result)
+        return result
 
 
 async def fetch_firms(city: City, days: int = 2) -> list[dict]:

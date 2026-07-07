@@ -12,7 +12,8 @@ from .. import db, hotspots
 from ..cities import CITIES, get_city
 from ..config import UPLOADS_DIR
 from ..services import forecast, geocode, sensors
-from ..services.firms import fetch_firms
+from ..services.firms import fetch_firms, fetch_firms_cached
+from ..services.source_attribution import attribute_sources
 from ..services.vision import classify_photo
 
 router = APIRouter(prefix="/api")
@@ -32,13 +33,26 @@ async def list_cities():
 async def get_sensors(city: str = "delhi"):
     c = get_city(city)
     data = await sensors.fetch_all_sensors(c)
+
+    # Fetch FIRMS fires + citizen reports for source attribution.
+    # Both are best-effort: a missing key or timeout must not break the sensor
+    # layer — we simply skip source labels for that refresh.
+    fires: list[dict] = []
+    try:
+        fires = await fetch_firms_cached(c)
+    except Exception:  # noqa: BLE001
+        pass
+    reports = db.list_reports(c.slug)
+
+    enriched = attribute_sources(data["sensors"], fires, reports)
+
     features = [
         {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [s["lon"], s["lat"]]},
             "properties": s,
         }
-        for s in data["sensors"]
+        for s in enriched
     ]
     return {
         "type": "FeatureCollection",
@@ -132,7 +146,7 @@ async def get_hotspots(city: str = "delhi"):
     # compute hotspots from sensor+citizen and report the degradation.
     fires, fire_error = [], None
     try:
-        fires = await fetch_firms(c)
+        fires = await fetch_firms_cached(c)
     except Exception as exc:  # noqa: BLE001
         fire_error = str(exc)
 

@@ -90,18 +90,25 @@ export default function MapView({
       <Recenter center={center} />
       <ClickToPin enabled={pinMode} onPick={onPickPin} />
 
-      {/* Phase 1: ground sensors */}
+      {/* Phase 1: ground sensors — AQI dot + pollution source label */}
       {layers.sensors && (
         <LayerGroup>
           {sensors.map((f, i) => {
             const p = f.properties;
+            const hasSource = p.pollution_source && p.pollution_source.length > 0;
+            const icon = L.divIcon({
+              className: "",
+              html: `<div class="sensor-marker">
+                <div class="sensor-dot" style="background:${p.color};border-color:${p.color === '#fff833' || p.color === '#a3c853' ? '#555' : p.color}">
+                  <span class="sensor-aqi">${Math.round(p.aqi)}</span>
+                </div>
+                ${hasSource ? `<div class="sensor-source-label">${p.source_icon || ''} ${p.pollution_source}</div>` : ''}
+              </div>`,
+              iconSize: [80, hasSource ? 52 : 28],
+              iconAnchor: [40, 14],
+            });
             return (
-              <CircleMarker
-                key={`s${i}`}
-                center={[p.lat, p.lon]}
-                radius={8}
-                pathOptions={{ color: "#000", weight: 1, fillColor: p.color, fillOpacity: 0.9 }}
-              >
+              <Marker key={`s${i}`} position={[p.lat, p.lon]} icon={icon}>
                 <Popup>
                   <b>{p.name}</b>
                   <br />
@@ -110,8 +117,24 @@ export default function MapView({
                   AQI ~ <b>{Math.round(p.aqi)}</b> ({p.band})
                   <br />
                   {p.parameter?.toUpperCase()}: {p.value} {p.unit}
+                  {p.pollution_source && (
+                    <>
+                      <br />
+                      <span style={{ color: "#ff9800", fontWeight: 600 }}>
+                        {p.source_icon} Cause: {p.pollution_source}
+                      </span>
+                      {p.source_detail && (
+                        <>
+                          <br />
+                          <span style={{ fontSize: 11, color: "#888" }}>
+                            {p.source_detail}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
                 </Popup>
-              </CircleMarker>
+              </Marker>
             );
           })}
         </LayerGroup>
