@@ -1,6 +1,6 @@
 # Shwaas — Neighbourhood Pollution Hotspot Map
 
-Hyper-local pollution detection for a **sitting MP's constituency**. City AQI apps
+Hyper-local pollution detection. City AQI apps
 average over a whole city and miss street-level events — garbage-dump fires,
 industrial clusters, smog traps at junctions. Shwaas fuses **three live signals**
 to catch them, and specifically flags **hidden hotspots**: places with strong
