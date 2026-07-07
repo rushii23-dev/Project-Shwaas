@@ -1,0 +1,23 @@
+# Render blueprint for the Shwaas FastAPI backend.
+# In Render: New + -> Blueprint -> pick this repo. It reads this file.
+# Then set the secret env vars (WAQI_TOKEN, FIRMS_MAP_KEY, GEMINI_API_KEY,
+# CORS_ORIGINS) in the dashboard -- they are NOT stored in the repo.
+services:
+  - type: web
+    name: shwaas-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: WAQI_TOKEN
+        sync: false          # set in dashboard
+      - key: FIRMS_MAP_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false          # e.g. https://your-app.vercel.app

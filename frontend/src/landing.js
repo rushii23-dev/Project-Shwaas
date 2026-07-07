@@ -12,7 +12,10 @@
  * No AQI numbers are fabricated -- everything shown comes from the live API.
  */
 
-const API_BASE = ""; // same origin; Vite proxies /api -> FastAPI in dev
+// Local dev: leave VITE_API_BASE unset -> "" (same origin) so Vite proxies
+// /api -> FastAPI. Production (Vercel): set VITE_API_BASE to the deployed
+// backend URL, e.g. https://shwaas-backend.onrender.com
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 class Base {
   constructor(props) {
