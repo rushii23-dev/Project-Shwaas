@@ -8,15 +8,8 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "leaflet": "^1.9.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-leaflet": "^4.2.1",
-    "recharts": "^2.12.7"
-  },
+  "comment": "Leaflet is loaded from a CDN in index.html; the live app is the single vanilla-JS page (index.html + src/landing.js), so no runtime npm dependencies are needed.",
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.2",
     "vite": "^5.4.8"
   }
 }

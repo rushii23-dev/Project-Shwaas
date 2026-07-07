@@ -766,6 +766,36 @@ class Shwaas extends Base {
     });
     this.on(close, "click", () => { panel.style.display = "none"; });
     this.on(this.q("#rSubmit"), "click", () => this.submitReport());
+    this.on(this.q("#rLocate"), "click", () => this.useLiveLocation());
+  }
+
+  // Ask the browser for the user's real GPS fix and drop the report pin there,
+  // so the report's location is exact instead of an approximate typed address.
+  useLiveLocation() {
+    const pinEl = this.q("#rPin");
+    const setPinMsg = (t, c) => { if (pinEl) { pinEl.textContent = t; pinEl.style.color = c || "var(--text-2)"; } };
+    if (!("geolocation" in navigator)) {
+      return setPinMsg("LIVE LOCATION NOT SUPPORTED ON THIS DEVICE — CLICK THE MAP", "var(--aqi-poor)");
+    }
+    setPinMsg("GETTING YOUR LIVE LOCATION…", "var(--iris)");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        this.setPin([latitude, longitude]);           // sets this.pin + draws marker
+        if (this._map) { try { this._map.setView([latitude, longitude], 16); } catch (e) {} }
+        if (pinEl) {
+          pinEl.style.color = "var(--aqi-good)";
+          pinEl.textContent = "LIVE LOCATION SET · " + latitude.toFixed(4) + ", " + longitude.toFixed(4) + " · ±" + Math.round(accuracy) + "M";
+        }
+      },
+      (err) => {
+        const msg = err && err.code === 1
+          ? "LOCATION PERMISSION DENIED — ALLOW IT IN YOUR BROWSER OR CLICK THE MAP"
+          : "COULDN'T GET LIVE LOCATION — CLICK THE MAP INSTEAD";
+        setPinMsg(msg, "var(--aqi-poor)");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   async submitReport() {
