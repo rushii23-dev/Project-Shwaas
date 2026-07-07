@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shwaas — See the air on your street</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:#0f1011;transition:background .5s var(--ease-inout);}
+  a{text-decoration:none;}
+  ::selection{background:#847dff;color:#fff;}
+  @keyframes sheen{0%{transform:translateX(-140%) skewX(-18deg)}100%{transform:translateX(240%) skewX(-18deg)}}
+  :root{
+    --iris:#847dff;--iris-deep:#4b49aa;--iris-pale:#d1c9ff;--cyan-signal:#00b3dd;--hotspot-hidden:#ff2bd6;
+    --aqi-good:#009865;--aqi-satisfactory:#a3c853;--aqi-moderate:#fff833;--aqi-poor:#f29305;--aqi-verypoor:#e93f33;--aqi-severe:#af2d24;
+    --ease-soft:cubic-bezier(0.22,1,0.36,1);--ease-inout:cubic-bezier(0.65,0.05,0.36,1);
+  }
+  [data-theme="dark"]{
+    --canvas:#0f1011;--canvas-2:#090a0b;--surface:#1a1b1d;--surface-2:#2e2e2e;--hover:#3f4041;--border:rgba(255,255,255,0.10);
+    --text:#ffffff;--text-2:#9f9fa0;--heading:#f5f5f7;--action:#ffffff;--action-text:#000000;
+    --glass:rgba(255,255,255,0.07);--glow:0 0 90px rgba(132,125,255,0.20);--haze-bot:#241c22;--sky1:#0f1011;--sky2:#16130f;--sky3:#2b221a;--skyline:#3a3128;--gridline:rgba(255,255,255,0.045);--inv-text:#0f1011;--hero-scrim:linear-gradient(100deg,rgba(15,16,17,0.84) 0%,rgba(15,16,17,0.52) 36%,rgba(15,16,17,0) 64%);--text-halo:0 1px 20px rgba(0,0,0,0.6);
+  }
+  [data-theme="light"]{
+    --canvas:#f6f5f2;--canvas-2:#eeece7;--surface:#ffffff;--surface-2:#f1efea;--hover:#e7e4dd;--border:rgba(20,18,16,0.10);
+    --text:#141210;--text-2:#5c574f;--heading:#1c1a17;--action:#141210;--action-text:#ffffff;
+    --glass:rgba(255,255,255,0.55);--glow:0 26px 80px rgba(20,18,16,0.10);--haze-bot:#f4cba6;--sky1:#e9ecf4;--sky2:#f7dfc8;--sky3:#f4cba6;--skyline:#d8cbbf;--gridline:rgba(20,18,16,0.05);--inv-text:#f6f5f2;--hero-scrim:linear-gradient(100deg,rgba(240,238,233,0.82) 0%,rgba(243,230,216,0.4) 38%,rgba(244,203,166,0) 66%);--text-halo:0 1px 16px rgba(248,244,238,0.7);
+  }
+  @keyframes wordUp{from{opacity:0;transform:translateY(0.62em) rotateX(-42deg)}to{opacity:1;transform:translateY(0) rotateX(0)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes hazeDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(-2.4%)}}
+  @keyframes ringPulse{0%{transform:translate(-50%,-50%) scale(.5);opacity:.85}70%{opacity:0}100%{transform:translate(-50%,-50%) scale(2.8);opacity:0}}
+  @keyframes irisGlow{0%,100%{text-shadow:0 0 22px rgba(132,125,255,0)}50%{text-shadow:0 0 26px rgba(132,125,255,0.55)}}
+  @keyframes breathe{0%,100%{transform:scale(1);box-shadow:0 5px 18px rgba(75,73,170,0.38),inset 0 1px 1.5px rgba(255,255,255,0.4)}50%{transform:scale(1.07);box-shadow:0 8px 30px rgba(132,125,255,0.55),inset 0 1px 1.5px rgba(255,255,255,0.5)}}
+  .brand-mark{animation:breathe 4.8s var(--ease-inout) infinite;}
+  .brand:hover .brand-mark{transform:scale(1.07);}
+  .brand:hover .brand-word{opacity:0.82;}
+  .brand-word{transition:opacity .3s var(--ease-soft);}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes emberGlow{0%,100%{text-shadow:0 0 20px rgba(242,147,5,0.35)}50%{text-shadow:0 0 40px rgba(242,147,5,0.75),0 0 70px rgba(233,63,51,0.35)}}
+  @keyframes emberGlowRed{0%,100%{text-shadow:0 0 20px rgba(233,63,51,0.35)}50%{text-shadow:0 0 42px rgba(233,63,51,0.8),0 0 72px rgba(242,147,5,0.3)}}
+  .ember{color:#f6a63a;font-style:italic;animation:emberGlow 3.6s ease-in-out infinite;}
+  .ember-red{color:#f2745a;animation:emberGlowRed 3.6s ease-in-out 0.4s infinite;}
+  [data-tile]:hover{transform:translateY(-10px) !important;box-shadow:0 34px 70px rgba(0,0,0,0.42);}
+  [data-tile] .tile-art{transition:transform .5s var(--ease-soft);}
+  [data-tile]:hover .tile-art{transform:scale(1.04);}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app" data-theme="dark" style="font-family:'Inter',sans-serif;background:var(--canvas);color:var(--text-2);overflow-x:hidden;min-height:100vh;transition:background .5s var(--ease-inout);">
+
+  <nav id="nav" style="position:fixed;top:0;left:0;right:0;z-index:120;display:flex;align-items:center;justify-content:space-between;padding:20px 34px;background:transparent;border-bottom:1px solid transparent;transition:padding .3s var(--ease-soft),background .3s var(--ease-soft),border-color .3s var(--ease-soft);">
+    <div style="display:flex;align-items:center;gap:18px;">
+      <div class="brand" style="display:flex;align-items:center;gap:13px;cursor:pointer;">
+        <span class="brand-mark" style="position:relative;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;background:linear-gradient(150deg,#a49dff 0%,var(--iris) 44%,var(--iris-deep) 100%);overflow:hidden;">
+          <span style="position:absolute;top:-45%;left:-12%;width:72%;height:130%;background:radial-gradient(circle,rgba(255,255,255,0.55),transparent 68%);filter:blur(3px);"></span>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" style="position:relative;z-index:1;">
+            <path d="M3 8.5h9.5a3 3 0 1 0-3-3"></path>
+            <path d="M3 13h13a3.3 3.3 0 1 1-3.3 3.3"></path>
+            <path d="M3 17.5h5.5" opacity="0.5"></path>
+          </svg>
+        </span>
+        <span class="brand-word" style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px;letter-spacing:0.008em;line-height:1;background:linear-gradient(168deg,var(--heading) 52%,var(--iris) 148%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Shwaas</span>
+      </div>
+      <button id="regionPill" type="button" style="display:inline-flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(24px);padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;">
+        <span style="position:relative;width:7px;height:7px;display:inline-flex;"><span style="position:absolute;inset:0;border-radius:50%;background:var(--aqi-good);"></span><span style="position:absolute;top:50%;left:50%;width:7px;height:7px;border-radius:50%;border:1px solid var(--aqi-good);animation:ringPulse 2.6s ease-out infinite;"></span></span>
+        <span style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.16em;color:var(--heading);" id="navRegion">DELHI</span>
+        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--text-2);"><path d="M3 4.5 6 7.5 9 4.5"></path></svg>
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:30px;">
+      <a href="#gap" data-nav style="position:relative;display:inline-block;font-size:14px;font-weight:300;color:var(--text-2);padding-bottom:3px;transition:color .3s var(--ease-soft),transform .3s var(--ease-soft);">The gap<span data-nav-ul style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--iris);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease-soft);"></span></a>
+      <a href="#how" data-nav style="position:relative;display:inline-block;font-size:14px;font-weight:300;color:var(--text-2);padding-bottom:3px;transition:color .3s var(--ease-soft),transform .3s var(--ease-soft);">How it works<span data-nav-ul style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--iris);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease-soft);"></span></a>
+      <a href="#map" data-nav style="position:relative;display:inline-block;font-size:14px;font-weight:300;color:var(--text-2);padding-bottom:3px;transition:color .3s var(--ease-soft),transform .3s var(--ease-soft);">Live map<span data-nav-ul style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--iris);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease-soft);"></span></a>
+      <a href="#feed" data-nav style="position:relative;display:inline-block;font-size:14px;font-weight:300;color:var(--text-2);padding-bottom:3px;transition:color .3s var(--ease-soft),transform .3s var(--ease-soft);">Live feed<span data-nav-ul style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--iris);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease-soft);"></span></a>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button id="themeToggle" type="button" aria-label="Toggle theme" style="position:relative;width:40px;height:40px;border-radius:999px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(24px);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--heading);position:absolute;transition:opacity .4s var(--ease-soft),transform .4s var(--ease-soft);">
+          <circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path>
+        </svg>
+        <svg id="iconMoon" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="color:var(--heading);position:absolute;transition:opacity .4s var(--ease-soft),transform .4s var(--ease-soft);">
+          <path d="M20.5 14.3A8.4 8.4 0 1 1 9.7 3.5a6.6 6.6 0 0 0 10.8 10.8Z"></path>
+        </svg>
+      </button>
+      <a href="#map" data-magnetic style="position:relative;overflow:hidden;background:var(--action);color:var(--action-text);font-size:14px;font-weight:400;padding:9px 17px;border-radius:8px;"><span style="position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.45),transparent);animation:sheen 4.5s ease-in-out 1.2s infinite;"></span><span style="position:relative;">See your air →</span></a>
+    </div>
+  </nav>
+
+  <section id="hero" style="position:relative;overflow:hidden;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky1) 40%,var(--sky2) 66%,var(--sky3) 100%);">
+    <canvas id="cityScene" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"></canvas>
+    <div style="position:absolute;inset:0;z-index:2;pointer-events:none;background:var(--hero-scrim);"></div>
+
+    <div style="position:relative;z-index:3;max-width:1220px;margin:0 auto;padding:150px 40px 140px;display:grid;grid-template-columns:1.12fr 0.88fr;gap:60px;align-items:center;">
+      <div id="heroText">
+        <h1 style="font-family:'Playfair Display',serif;font-weight:400;font-size:78px;line-height:0.98;letter-spacing:-0.015em;color:var(--heading);margin:0 0 30px;perspective:800px;">
+          <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .20s both;">You</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .29s both;">check</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .38s both;">the</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .47s both;">weather.</span><br>
+          <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .60s both;">Why</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .69s both;">not</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) .78s both;">the</span> <span style="display:inline-block;font-style:italic;color:var(--iris);animation:wordUp .8s var(--ease-soft) .92s both,irisGlow 3.4s ease-in-out 1.7s infinite;">air</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) 1.0s both;">on</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) 1.09s both;">your</span> <span style="display:inline-block;animation:wordUp .8s var(--ease-soft) 1.18s both;">street?</span>
+        </h1>
+        <p style="font-weight:300;font-size:16px;line-height:1.5;color:var(--heading);text-shadow:var(--text-halo);max-width:452px;margin:0 0 34px;opacity:0;animation:fadeUp 1s var(--ease-soft) 1.2s both;">Official apps give a whole city one number. Shwaas gives <em style="font-style:italic;color:var(--iris);">your street</em> its own — from sensors, satellites, and the people around you, 24 hours ahead.</p>
+        <div style="display:flex;align-items:center;gap:14px;opacity:0;animation:fadeUp 1s var(--ease-soft) 1.4s both;">
+          <a id="hero-cta" href="#map" data-magnetic style="position:relative;overflow:hidden;background:var(--action);color:var(--action-text);font-size:16px;font-weight:400;padding:14px 26px;border-radius:8px;"><span style="position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent);animation:sheen 4.5s ease-in-out 2s infinite;"></span><span style="position:relative;">See your air →</span></a>
+          <a href="#hidden" data-ghost style="position:relative;overflow:hidden;background:transparent;border:1px solid var(--border);color:var(--heading);font-size:16px;font-weight:300;padding:13px 24px;border-radius:8px;transition:border-color .3s var(--ease-soft),color .3s var(--ease-soft);"><span data-ghost-fill style="position:absolute;inset:0;background:var(--heading);transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease-soft);"></span><span data-ghost-label style="position:relative;transition:color .3s var(--ease-soft);">Watch a hidden hotspot appear</span></a>
+        </div>
+      </div>
+
+      <div id="instrument" style="opacity:0;animation:fadeUp 1.1s var(--ease-soft) 1.2s both;">
+        <div style="background:var(--surface-2);border-radius:24px;padding:26px;box-shadow:var(--glow);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--heading);"><span id="liveDot" style="width:6px;height:6px;border-radius:50%;background:var(--text-2);"></span><span id="instRegion">DELHI</span></span>
+            <span id="statusTag" style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);">CONNECTING</span>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);margin-bottom:10px;">WORST STATION RIGHT NOW</div>
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <span id="aqiValue" style="font-family:'Inter',sans-serif;font-weight:500;font-size:70px;line-height:1;color:var(--text-2);">—</span>
+            <span id="aqiBand" style="font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.14em;color:var(--text-2);">— —</span>
+          </div>
+          <div id="stationLine" style="font-weight:300;font-size:13.5px;color:var(--text-2);margin-top:12px;min-height:19px;">Fetching worst station…</div>
+          <div style="height:1px;background:var(--hover);margin:22px 0;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);line-height:1.5;">HIDDEN HOTSPOTS IN<br><span id="hiddenRegion">DELHI</span> TODAY</span>
+            <span id="hiddenValue" style="font-family:'Inter',sans-serif;font-weight:500;font-size:42px;line-height:1;color:var(--text-2);">—</span>
+          </div>
+        </div>
+        <div id="regionChips" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;">
+          <button type="button" data-region="delhi" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.12em;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--action);color:var(--action-text);cursor:pointer;">DELHI</button>
+        </div>
+        <div id="feedNote" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.14em;color:var(--text-2);opacity:0.7;text-align:center;margin-top:13px;">AWAITING LIVE FEED — NO NUMBERS FABRICATED</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gap" style="background:var(--canvas-2);padding:130px 40px;">
+    <div style="max-width:980px;margin:0 auto;text-align:center;">
+      <h2 data-reveal style="font-family:'Playfair Display',serif;font-weight:400;font-size:50px;line-height:1;letter-spacing:-0.01em;color:var(--heading);margin:0 0 14px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">What a city-wide average <em style="font-style:italic;">hides</em>.</h2>
+      <p data-reveal data-delay="120" style="font-weight:300;font-size:17px;color:var(--text-2);max-width:540px;margin:0 auto 56px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">One reading for millions of people can't see the fire down your lane. The gap between stations is where the harm hides.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;">
+        <div data-reveal data-delay="60" style="padding:26px 18px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">
+          <div style="font-family:'Playfair Display',serif;font-weight:400;font-size:52px;color:var(--heading);line-height:1;margin-bottom:16px;"><span data-count="1">0</span><span style="font-size:24px;color:var(--text-2);"> / 200km²</span></div>
+          <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);">SENSOR DENSITY</div>
+        </div>
+        <div data-reveal data-delay="140" style="padding:26px 18px;border-left:1px solid var(--border);border-right:1px solid var(--border);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">
+          <div style="font-family:'Playfair Display',serif;font-weight:400;font-size:52px;color:var(--heading);line-height:1;margin-bottom:16px;"><span data-count="0">0</span></div>
+          <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);">EYES ON SIDE STREETS</div>
+        </div>
+        <div data-reveal data-delay="220" style="padding:26px 18px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">
+          <div style="font-family:'Playfair Display',serif;font-weight:400;font-size:52px;color:var(--heading);line-height:1;margin-bottom:16px;">HOURS</div>
+          <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);">OF REPORTING LAG</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="padding:130px 40px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-2);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">HOW IT WORKS</span>
+      <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:50px;line-height:1;letter-spacing:-0.01em;color:var(--heading);margin:18px 0 50px;max-width:680px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Three live signals, <em style="font-style:italic;">one</em> street-level truth.</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+
+        <!-- Card 1 · Sensors -->
+        <div data-reveal data-delay="60" data-tile style="position:relative;overflow:hidden;background:linear-gradient(160deg,#9a94ff,#7a72f2 55%,#5c55c9);border-radius:30px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);cursor:default;">
+          <div class="tile-art" style="background:rgba(15,16,17,0.16);border-radius:18px;padding:10px;margin-bottom:auto;">
+            <svg viewBox="0 0 300 150" width="100%" style="display:block;">
+              <defs><linearGradient id="barG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0f1011" stop-opacity="0.15"/><stop offset="1" stop-color="#0f1011" stop-opacity="0.35"/></linearGradient></defs>
+              <g stroke="rgba(255,255,255,0.16)" stroke-width="1">
+                <line x1="0" y1="38" x2="300" y2="38"/><line x1="0" y1="76" x2="300" y2="76"/><line x1="0" y1="114" x2="300" y2="114"/>
+                <line x1="60" y1="0" x2="60" y2="150"/><line x1="120" y1="0" x2="120" y2="150"/><line x1="180" y1="0" x2="180" y2="150"/><line x1="240" y1="0" x2="240" y2="150"/>
+              </g>
+              <!-- rising AQI mini-bars -->
+              <g>
+                <rect x="24" y="96" width="10" height="40" rx="3" fill="url(#barG)"/>
+                <rect x="42" y="78" width="10" height="58" rx="3" fill="url(#barG)"/>
+                <rect x="60" y="104" width="10" height="32" rx="3" fill="url(#barG)"/>
+              </g>
+              <!-- live station pins with pulse -->
+              <g>
+                <circle cx="90" cy="52" r="9" fill="none" stroke="#009865" stroke-width="1.5" opacity="0.7"><animate attributeName="r" values="6;16" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0" dur="2.4s" repeatCount="indefinite"/></circle>
+                <circle cx="90" cy="52" r="6" fill="#009865" stroke="#0f1011" stroke-width="1.5"/>
+                <circle cx="205" cy="44" r="9" fill="none" stroke="#f29305" stroke-width="1.5" opacity="0.7"><animate attributeName="r" values="6;16" dur="2.4s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0" dur="2.4s" begin="0.6s" repeatCount="indefinite"/></circle>
+                <circle cx="205" cy="44" r="6" fill="#f29305" stroke="#0f1011" stroke-width="1.5"/>
+                <circle cx="248" cy="100" r="9" fill="none" stroke="#e93f33" stroke-width="1.5" opacity="0.7"><animate attributeName="r" values="6;16" dur="2.4s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0" dur="2.4s" begin="1.2s" repeatCount="indefinite"/></circle>
+                <circle cx="248" cy="100" r="6" fill="#e93f33" stroke="#0f1011" stroke-width="1.5"/>
+                <circle cx="150" cy="112" r="6" fill="#a3c853" stroke="#0f1011" stroke-width="1.5"/>
+                <circle cx="128" cy="30" r="6" fill="#fff833" stroke="#0f1011" stroke-width="1.5"/>
+              </g>
+            </svg>
+          </div>
+          <div style="margin-top:18px;">
+            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:34px;line-height:1;color:#0f1011;margin:0 0 10px;">Sensors</h3>
+            <p style="font-weight:300;font-size:14px;line-height:1.5;color:rgba(15,16,17,0.8);margin:0;">Live AQI from every official monitoring station — the baseline truth, wherever a monitor stands.</p>
+          </div>
+        </div>
+
+        <!-- Card 2 · Your eyes -->
+        <div data-reveal data-delay="150" data-tile style="position:relative;overflow:hidden;background:linear-gradient(160deg,#5a57be,#4b49aa 55%,#39377e);border-radius:30px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);cursor:default;">
+          <div class="tile-art" style="position:relative;background:rgba(0,0,0,0.28);border-radius:18px;padding:10px;margin-bottom:auto;overflow:hidden;">
+            <svg viewBox="0 0 300 150" width="100%" style="display:block;">
+              <!-- smoke plume -->
+              <g fill="#d1c9ff">
+                <ellipse cx="150" cy="118" rx="34" ry="10" opacity="0.35"/>
+                <path d="M150 116 C 132 92, 176 84, 152 58 C 138 40, 172 34, 156 14" fill="none" stroke="#e6e2ff" stroke-width="10" stroke-linecap="round" opacity="0.55"><animate attributeName="opacity" values="0.35;0.7;0.35" dur="3s" repeatCount="indefinite"/></path>
+                <circle cx="156" cy="16" r="12" opacity="0.4"/><circle cx="150" cy="46" r="15" opacity="0.3"/>
+              </g>
+              <!-- viewfinder brackets -->
+              <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round">
+                <path d="M40 34 L40 20 L54 20"/><path d="M260 34 L260 20 L246 20"/>
+                <path d="M40 116 L40 130 L54 130"/><path d="M260 116 L260 130 L246 130"/>
+              </g>
+              <!-- scan line -->
+              <rect x="40" y="20" width="220" height="2.5" fill="#00b3dd" opacity="0.9">
+                <animate attributeName="y" values="24;128;24" dur="3.2s" repeatCount="indefinite"/>
+              </rect>
+              <!-- classification tag -->
+              <g><rect x="176" y="96" width="96" height="26" rx="6" fill="#0f1011" opacity="0.82"/><circle cx="190" cy="109" r="4" fill="#00b3dd"/><text x="200" y="113" font-family="'Inter',sans-serif" font-size="11" fill="#f5f5f7" letter-spacing="1">SMOKE · 0.92</text></g>
+            </svg>
+          </div>
+          <div style="margin-top:18px;">
+            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:34px;line-height:1;color:#f5f5f7;margin:0 0 10px;">Your eyes</h3>
+            <p style="font-weight:300;font-size:14px;line-height:1.5;color:rgba(255,255,255,0.78);margin:0;">Photograph smoke or dust and vision AI classifies it — smoke, dust, haze, fire — then drops it on the map for everyone.</p>
+          </div>
+        </div>
+
+        <!-- Card 3 · From orbit -->
+        <div data-reveal data-delay="240" data-tile style="position:relative;overflow:hidden;background:linear-gradient(160deg,#33343a,#212227 60%,#141519);border-radius:30px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);cursor:default;">
+          <div class="tile-art" style="position:relative;background:radial-gradient(120% 90% at 50% -10%, rgba(132,125,255,0.14), rgba(0,0,0,0));border-radius:18px;padding:6px;margin-bottom:auto;overflow:hidden;">
+            <svg viewBox="0 0 300 150" width="100%" style="display:block;">
+              <!-- stars -->
+              <g fill="#ffffff"><circle cx="40" cy="24" r="1"/><circle cx="90" cy="40" r="1.4" opacity="0.7"/><circle cx="200" cy="20" r="1"/><circle cx="250" cy="46" r="1.2" opacity="0.7"/><circle cx="150" cy="30" r="1"/></g>
+              <!-- earth horizon -->
+              <path d="M-20 150 Q150 96 320 150 Z" fill="#1c2a3a"/>
+              <path d="M-20 150 Q150 96 320 150" fill="none" stroke="#3a5f86" stroke-width="2" opacity="0.7"/>
+              <!-- thermal hotspot on surface -->
+              <circle cx="176" cy="118" r="16" fill="none" stroke="#e93f33" stroke-width="1.5" opacity="0.8"><animate attributeName="r" values="6;22" dur="2.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="2.2s" repeatCount="indefinite"/></circle>
+              <circle cx="176" cy="118" r="6" fill="#e93f33"/>
+              <!-- satellite -->
+              <g transform="translate(96 44)" style="animation:floaty 4s ease-in-out infinite;">
+                <rect x="-9" y="-9" width="18" height="18" rx="3" fill="#cacaca"/>
+                <rect x="-28" y="-5" width="16" height="10" rx="2" fill="#847dff"/>
+                <rect x="12" y="-5" width="16" height="10" rx="2" fill="#847dff"/>
+                <line x1="-12" y1="-5" x2="-9" y2="-4" stroke="#888" stroke-width="1.5"/><line x1="9" y1="-4" x2="12" y2="-5" stroke="#888" stroke-width="1.5"/>
+              </g>
+              <!-- scan beam -->
+              <line x1="96" y1="52" x2="176" y2="112" stroke="#00b3dd" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"><animate attributeName="opacity" values="0.2;0.85;0.2" dur="2.2s" repeatCount="indefinite"/></line>
+            </svg>
+          </div>
+          <div style="margin-top:18px;">
+            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:34px;line-height:1;color:var(--heading);margin:0 0 10px;">From orbit</h3>
+            <p style="font-weight:300;font-size:14px;line-height:1.5;color:var(--text-2);margin:0;">Satellite thermal-anomaly pixels catch fires no ground sensor is close enough to ever register.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hidden" style="background:var(--canvas-2);padding:130px 40px;">
+    <div style="max-width:1080px;margin:0 auto;display:grid;grid-template-columns:0.9fr 1.1fr;gap:60px;align-items:center;">
+      <div>
+        <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--hotspot-hidden);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">THE HIDDEN-HOTSPOT MOMENT</span>
+        <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:46px;line-height:1.02;letter-spacing:-0.01em;color:var(--heading);margin:18px 0 22px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Where the sensors <em style="font-style:italic;">aren't</em>.</h2>
+        <p data-reveal data-delay="160" style="font-weight:300;font-size:17px;line-height:1.55;color:var(--text-2);margin:0 0 24px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Strong evidence from people and satellites, no official monitor nearby. Shwaas scores a 500m grid and flags the gap — a hidden hotspot only you and orbit could see. Scroll to watch it appear.</p>
+        <div id="seqCaption" style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.14em;color:var(--hotspot-hidden);line-height:1.7;opacity:0;transition:opacity .5s var(--ease-soft);">NO OFFICIAL SENSOR HERE —<br>FOUND BY PEOPLE + SATELLITES</div>
+      </div>
+      <div id="hiddenSeq" style="position:relative;background:var(--surface);border:1px solid var(--border);border-radius:24px;height:380px;overflow:hidden;">
+        <div style="position:absolute;inset:0;background-image:linear-gradient(var(--gridline) 1px,transparent 1px),linear-gradient(90deg,var(--gridline) 1px,transparent 1px);background-size:46px 46px;"></div>
+        <div class="seqStage" data-stage="0" style="position:absolute;top:22%;left:20%;width:12px;height:12px;border-radius:50%;background:var(--aqi-good);border:2px solid var(--surface);opacity:0;transform:scale(.3);transition:opacity .5s var(--ease-soft),transform .5s var(--ease-soft);"></div>
+        <div class="seqStage" data-stage="0" style="position:absolute;top:70%;left:24%;width:12px;height:12px;border-radius:50%;background:var(--aqi-satisfactory);border:2px solid var(--surface);opacity:0;transform:scale(.3);transition:opacity .5s var(--ease-soft) .08s,transform .5s var(--ease-soft) .08s;"></div>
+        <div class="seqStage" data-stage="0" style="position:absolute;top:32%;left:78%;width:12px;height:12px;border-radius:50%;background:var(--aqi-poor);border:2px solid var(--surface);opacity:0;transform:scale(.3);transition:opacity .5s var(--ease-soft) .16s,transform .5s var(--ease-soft) .16s;"></div>
+        <div class="seqStage" data-stage="0" style="position:absolute;top:76%;left:74%;width:12px;height:12px;border-radius:50%;background:var(--aqi-good);border:2px solid var(--surface);opacity:0;transform:scale(.3);transition:opacity .5s var(--ease-soft) .24s,transform .5s var(--ease-soft) .24s;"></div>
+        <div class="seqStage" data-stage="1" style="position:absolute;top:30%;left:52%;opacity:0;transform:translateY(-14px);transition:opacity .5s var(--ease-soft),transform .5s var(--ease-soft);"><div style="width:14px;height:14px;border-radius:50%;background:var(--iris);border:2px solid var(--surface);"></div><div style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.1em;color:var(--iris);margin-top:5px;white-space:nowrap;">PERSON</div></div>
+        <div class="seqStage" data-stage="2" style="position:absolute;top:60%;left:60%;opacity:0;transform:scale(.4);transition:opacity .5s var(--ease-soft),transform .5s var(--ease-soft);"><div style="width:15px;height:15px;background:var(--aqi-verypoor);border:2px solid var(--surface);"></div><div style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.1em;color:var(--aqi-verypoor);margin-top:5px;white-space:nowrap;">FIRMS</div></div>
+        <div class="seqStage" data-stage="3" style="position:absolute;top:47%;left:56%;opacity:0;transition:opacity .5s var(--ease-soft);">
+          <div style="position:absolute;top:50%;left:50%;width:24px;height:24px;border-radius:50%;border:1px solid var(--hotspot-hidden);animation:ringPulse 2.2s ease-out infinite;"></div>
+          <div style="position:relative;width:24px;height:24px;border-radius:50%;background:var(--hotspot-hidden);border:2px solid var(--surface);transform:translate(-50%,-50%);box-shadow:0 0 24px rgba(255,43,214,0.6);"></div>
+        </div>
+        <div style="position:absolute;bottom:14px;left:16px;right:16px;height:3px;background:var(--hover);border-radius:2px;overflow:hidden;"><div id="seqBar" style="height:100%;width:0%;background:var(--hotspot-hidden);transition:width .1s linear;"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="map" style="padding:130px 40px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;flex-wrap:wrap;gap:16px;">
+        <div>
+          <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-2);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">LIVE MAP · <span id="mapRegion">DELHI</span></span>
+          <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:46px;line-height:1;letter-spacing:-0.01em;color:var(--heading);margin:16px 0 0;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Every signal, on one <em style="font-style:italic;">map</em>.</h2>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.12em;color:var(--text-2);">
+          <span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:var(--aqi-good);"></span>GOOD</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:var(--aqi-moderate);"></span>MODERATE</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:var(--aqi-poor);"></span>POOR</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:var(--aqi-verypoor);"></span>V.POOR</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:var(--hotspot-hidden);"></span>HIDDEN</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div id="layerToggles" style="display:flex;gap:7px;flex-wrap:wrap;">
+          <button type="button" data-layer="sensors" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--action);color:var(--action-text);cursor:pointer;">SENSORS</button>
+          <button type="button" data-layer="hotspots" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--action);color:var(--action-text);cursor:pointer;">HOTSPOTS</button>
+          <button type="button" data-layer="fires" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--action);color:var(--action-text);cursor:pointer;">FIRES</button>
+          <button type="button" data-layer="reports" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--action);color:var(--action-text);cursor:pointer;">REPORTS</button>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select id="citySelect" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.1em;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--heading);backdrop-filter:blur(24px);cursor:pointer;"></select>
+          <button id="reportBtn" type="button" data-magnetic style="font-family:'Inter',sans-serif;font-size:14px;padding:9px 17px;border-radius:8px;border:none;background:var(--action);color:var(--action-text);cursor:pointer;">+ Report pollution</button>
+        </div>
+      </div>
+      <div data-reveal style="background:var(--surface-2);border-radius:26px;padding:16px;opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease-soft),transform 1s var(--ease-soft);">
+        <div id="leafletMap" style="position:relative;height:520px;border-radius:16px;overflow:hidden;background:var(--canvas);">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--hover);z-index:0;">LOADING BASEMAP…</div>
+        </div>
+        <div id="mapNote" style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.14em;color:var(--text-2);opacity:0.7;text-align:center;margin-top:12px;">CONNECTING TO LIVE SIGNALS…</div>
+      </div>
+
+      <!-- Citizen report panel (revealed by "+ Report pollution") -->
+      <div id="reportPanel" style="display:none;margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:26px;color:var(--heading);margin:0;">Report what you see</h3>
+          <button id="reportClose" type="button" style="background:transparent;border:none;color:var(--text-2);font-size:22px;cursor:pointer;line-height:1;">×</button>
+        </div>
+        <p style="font-weight:300;font-size:14px;color:var(--text-2);margin:0 0 18px;">A photo of smoke, dust or haze — vision AI classifies it, then it joins the map for everyone. Drop a pin on the map or type a place.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <label style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:var(--text-2);display:flex;flex-direction:column;gap:7px;">PHOTO
+            <input id="rPhoto" type="file" accept="image/*" capture="environment" style="font-family:'Inter',sans-serif;font-size:13px;color:var(--heading);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px;">
+          </label>
+          <label style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:var(--text-2);display:flex;flex-direction:column;gap:7px;">LOCATION
+            <input id="rAddress" type="text" placeholder="address / landmark — or click the map" style="font-family:'Inter',sans-serif;font-size:13px;color:var(--heading);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;">
+          </label>
+        </div>
+        <input id="rNote" type="text" placeholder="Optional note — e.g. garbage being burned at the corner" style="width:100%;margin-top:14px;font-family:'Inter',sans-serif;font-size:13px;color:var(--heading);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap;">
+          <button id="rSubmit" type="button" data-magnetic style="font-family:'Inter',sans-serif;font-size:15px;padding:12px 24px;border-radius:8px;border:none;background:var(--action);color:var(--action-text);cursor:pointer;">Submit report →</button>
+          <span id="rPin" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.12em;color:var(--text-2);">NO PIN SET — CLICK THE MAP</span>
+        </div>
+        <div id="rResult" style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.1em;margin-top:16px;line-height:1.6;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="forecast" style="background:var(--canvas-2);padding:130px 40px;">
+    <div style="max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;">
+      <div>
+        <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-2);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">24-HOUR FORECAST</span>
+        <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:46px;line-height:1.02;letter-spacing:-0.01em;color:var(--heading);margin:18px 0 22px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Act <em style="font-style:italic;">before</em> the spike.</h2>
+        <p data-reveal data-delay="160" style="font-weight:300;font-size:17px;line-height:1.55;color:var(--text-2);margin:0;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Every hotspot carries a next-24h AQI forecast. When a spike is coming, you know to keep the kids in, move the run, close the window — before the air turns.</p>
+      </div>
+      <div data-reveal data-delay="120" style="background:#cacaca;border-radius:26px;padding:28px 30px;color:#0f1011;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+          <span style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:#3f4041;">24H AQI FORECAST</span>
+          <span id="forecastSpike" style="display:none;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:#af2d24;border:1px solid #af2d24;padding:4px 8px;border-radius:5px;">SPIKE EXPECTED</span>
+        </div>
+        <svg viewBox="0 0 320 110" width="100%" height="110" preserveAspectRatio="none" data-om-raster="true">
+          <line x1="0" y1="40" x2="320" y2="40" stroke="#af2d24" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"></line>
+          <polyline id="sparkline" points="0,78 40,74 80,80 120,70 160,66 200,52 240,34 280,22 320,16" fill="none" stroke="#00b3dd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:520;stroke-dashoffset:520;transition:stroke-dashoffset 1.8s var(--ease-inout);"></polyline>
+          <circle id="sparkDot" cx="320" cy="16" r="4" fill="#00b3dd" style="opacity:0;transition:opacity .4s ease 1.4s;"></circle>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;color:#6a6b6b;">
+          <span>NOW</span><span>+8H</span><span>+16H</span><span>+24H</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="feed" style="padding:130px 40px;">
+    <div style="max-width:1080px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:52px;">
+        <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-2);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">LIVE POLLUTION FEED · PUBLIC</span>
+        <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:50px;line-height:1;letter-spacing:-0.01em;color:var(--heading);margin:18px 0 12px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">What's in the air, and <em style="font-style:italic;">what should happen</em>.</h2>
+        <p data-reveal data-delay="140" style="font-weight:300;font-size:16px;color:var(--text-2);max-width:560px;margin:0 auto;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Ranked hotspots anyone can read — the suggested response, and whether it's been acted on. Civic transparency, in the open.</p>
+      </div>
+      <div id="feedList" style="border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--surface);">
+        <div style="padding:26px;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.14em;color:var(--text-2);text-align:center;">LOADING LIVE HOTSPOTS…</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="useful" style="background:var(--canvas-2);padding:120px 40px;">
+    <div style="max-width:1160px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:54px;">
+        <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--iris);opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">AIR YOU CAN ACT ON</span>
+        <h2 data-reveal data-delay="80" style="font-family:'Playfair Display',serif;font-weight:400;font-size:50px;line-height:1.02;letter-spacing:-0.01em;color:var(--heading);margin:16px 0 12px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Not just a number — a <em style="font-style:italic;">plan</em> for your day.</h2>
+        <p data-reveal data-delay="140" style="font-weight:300;font-size:17px;color:var(--text-2);max-width:560px;margin:0 auto;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Four ways people use Shwaas every day — because the air on your street decides more than you think.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+
+        <div data-reveal data-delay="60" data-tile style="background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:250px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);">
+          <div style="width:52px;height:52px;border-radius:14px;background:rgba(132,125,255,0.14);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#847dff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1.6"/><path d="M6 21l3-5 3 1 1 4"/><path d="M9 16l-1-4 4-3 3 3 2 1"/><path d="M4 9l3-1"/></svg>
+          </div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:22px;color:var(--heading);margin:0 0 8px;">Before you step out</h3>
+          <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Check <em style="font-style:italic;color:var(--iris);">your street's</em> air before a run, the commute or the school drop — not a citywide guess.</p>
+        </div>
+
+        <div data-reveal data-delay="140" data-tile style="background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:250px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);">
+          <div style="width:52px;height:52px;border-radius:14px;background:rgba(0,179,221,0.14);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00b3dd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+          </div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:22px;color:var(--heading);margin:0 0 8px;">Protect who matters</h3>
+          <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Know exactly when to shut the windows and keep <em style="font-style:italic;color:var(--iris);">kids and elders</em> indoors.</p>
+        </div>
+
+        <div data-reveal data-delay="220" data-tile style="background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:250px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);">
+          <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,43,214,0.14);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff2bd6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>
+          </div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:22px;color:var(--heading);margin:0 0 8px;">See smoke? Flag it</h3>
+          <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Snap a photo — AI confirms it and it's <em style="font-style:italic;color:var(--iris);">live on the map</em> for your whole neighbourhood in seconds.</p>
+        </div>
+
+        <div data-reveal data-delay="300" data-tile style="background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:250px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft);">
+          <div style="width:52px;height:52px;border-radius:14px;background:rgba(242,147,5,0.16);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f29305" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4l3 2"/></svg>
+          </div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:22px;color:var(--heading);margin:0 0 8px;">Stay a step ahead</h3>
+          <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">A <em style="font-style:italic;color:var(--iris);">24-hour forecast</em> warns you before the air turns — plan around the spike, don't get caught in it.</p>
+        </div>
+      </div>
+
+      <div data-reveal data-delay="360" style="display:flex;justify-content:center;margin-top:44px;opacity:0;transform:translateY(20px);transition:opacity .8s var(--ease-soft),transform .8s var(--ease-soft);">
+        <span style="display:inline-flex;align-items:center;gap:9px;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(24px);border-radius:999px;padding:9px 18px;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:var(--text-2);">
+          <span style="position:relative;width:7px;height:7px;display:inline-flex;"><span style="position:absolute;inset:0;border-radius:50%;background:var(--aqi-good);"></span><span style="position:absolute;top:50%;left:50%;width:7px;height:7px;border-radius:50%;border:1px solid var(--aqi-good);animation:ringPulse 2.6s ease-out infinite;"></span></span>
+          100% LIVE DATA · NOTHING IS MADE UP
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section id="cta" style="position:relative;overflow:hidden;padding:180px 40px;">
+    <!-- rising pollution particles + breathing ember glow -->
+    <canvas id="ctaScene" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(70% 60% at 50% 52%, rgba(0,0,0,0) 34%, var(--canvas) 100%);"></div>
+
+    <div style="position:relative;z-index:2;max-width:920px;margin:0 auto;text-align:center;">
+      <span data-reveal style="display:inline-block;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.2em;color:#f29305;margin-bottom:26px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">THE AIR YOU'RE BREATHING RIGHT NOW</span>
+      <h2 data-reveal style="font-family:'Playfair Display',serif;font-weight:400;font-size:64px;line-height:1.02;letter-spacing:-0.015em;color:var(--heading);margin:0 0 24px;opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease-soft),transform 1s var(--ease-soft);text-wrap:balance;">See the <span class="ember">fire</span> down your <em class="ember-red" style="font-style:italic;">street</em>.</h2>
+      <p data-reveal data-delay="120" style="font-weight:300;font-size:17px;line-height:1.6;color:var(--text-2);max-width:520px;margin:0 auto 40px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Every speck rising here is <em style="font-style:italic;color:#f29305;">PM2.5</em> — fine enough to slip past your lungs and into your blood. You can't see it. Shwaas can.</p>
+      <a data-reveal data-delay="220" data-magnetic href="#map" style="position:relative;overflow:hidden;display:inline-block;background:var(--action);color:var(--action-text);font-size:17px;font-weight:400;padding:16px 34px;border-radius:8px;opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease-soft),transform .35s var(--ease-soft);"><span style="position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent);animation:sheen 4.5s ease-in-out 2.5s infinite;"></span><span style="position:relative;">See your air →</span></a>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--border);padding:44px 40px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <span style="position:relative;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;">
+          <span style="position:absolute;inset:0;border-radius:8px;background:conic-gradient(from 140deg,var(--iris),var(--iris-deep),var(--iris));"></span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" style="position:relative;z-index:1;">
+            <path d="M4 9h9a3 3 0 1 0-3-3"></path>
+            <path d="M4 14h13a3.2 3.2 0 1 1-3.2 3.2"></path>
+          </svg>
+        </span>
+        <span style="font-family:'Playfair Display',serif;font-weight:500;font-size:20px;color:var(--heading);">Shwaas</span>
+      </div>
+      <div style="display:flex;gap:26px;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.14em;color:var(--text-2);">
+        <a href="#gap" style="color:var(--text-2);">GAP</a>
+        <a href="#how" style="color:var(--text-2);">SIGNALS</a>
+        <a href="#map" style="color:var(--text-2);">MAP</a>
+        <a href="#feed" style="color:var(--text-2);">FEED</a>
+      </div>
+      <span style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:var(--text-2);opacity:0.8;">A PUBLIC CIVIC TOOL · BUILT WITH REAL-TIME AIR DATA</span>
+    </div>
+  </footer>
+
+</div>
+<script type="module" src="/src/landing.js"></script>
+</body>
+</html>

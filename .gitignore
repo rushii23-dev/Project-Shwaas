@@ -1,0 +1,23 @@
+# Env files (never commit real keys)
+.env
+.env.*
+!*.env.example
+backend/.env
+.env.txt
+
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+backend/hotspot.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.tmp.*
