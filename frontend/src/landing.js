@@ -921,15 +921,32 @@ class Shwaas extends Base {
       if (!c) return;
       const aqi = Math.round(p.aqi || 0);
       const pol = this.polLabel(p.dominentpol);
+      const hasSource = p.pollution_source && p.pollution_source.length > 0;
+      const borderColor = (p.color === '#fff833' || p.color === '#a3c853') ? '#555' : (p.color || '#a3c853');
+
+      // Custom divIcon: AQI dot + source label below
+      const icon = L.divIcon({
+        className: '',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto;">'
+          + '<div style="width:28px;height:28px;border-radius:50%;border:2.5px solid ' + borderColor + ';background:' + (p.color || '#a3c853') + ';display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.45);">'
+          + '<span style="font-size:10px;font-weight:800;color:#fff;text-shadow:0 0 3px rgba(0,0,0,0.7),0 1px 1px rgba(0,0,0,0.5);line-height:1;letter-spacing:-0.3px;">' + aqi + '</span>'
+          + '</div>'
+          + (hasSource ? '<div style="background:rgba(15,23,32,0.88);color:#f0f0f0;font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 2px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);line-height:1.3;text-align:center;font-family:Inter,system-ui,sans-serif;">' + (p.source_icon || '') + ' ' + p.pollution_source + '</div>' : '')
+          + '</div>',
+        iconSize: [80, hasSource ? 52 : 28],
+        iconAnchor: [40, 14],
+      });
+
       const html = `<div style="min-width:200px;font-family:'Inter',sans-serif;">
         <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${p.name || "Monitoring station"}</div>
         <div><span style="font-size:28px;font-weight:700;color:${p.color || "#a3c853"};">${aqi}</span>
         <span style="font-size:12px;color:#8b9bab;"> AQI · ${p.band || ""}</span></div>
         ${pol ? `<div style="font-size:12px;margin:4px 0 0;color:#111;"><b>Main pollutant:</b> ${pol}</div>` : ""}
+        ${hasSource ? `<div style="font-size:12.5px;margin:5px 0 0;padding:4px 6px;background:#fff3e0;border-radius:4px;border-left:3px solid #ff9800;"><span style="font-weight:600;color:#e65100;">${p.source_icon || ''} Cause: ${p.pollution_source}</span>${p.source_detail ? '<br><span style="font-size:11px;color:#666;">' + p.source_detail + '</span>' : ''}</div>` : ""}
         <div style="font-size:12.5px;margin:5px 0 6px;color:#333;">${this.adviceFor(aqi)}</div>
         <div style="font-family:'Inter',sans-serif;font-size:10px;color:#8b9bab;letter-spacing:0.08em;">${(p.source || "").toUpperCase()} · ${(p.parameter || "").toUpperCase()} ${p.value ?? ""} ${p.unit || ""}</div>
       </div>`;
-      L.circleMarker([c[1], c[0]], { radius: 6, color: "#0f1011", weight: 1.5, fillColor: p.color || "#a3c853", fillOpacity: 0.92 })
+      L.marker([c[1], c[0]], { icon: icon })
         .bindPopup(html).addTo(this._lg.sensors);
     });
     this._latest.hotspots.forEach((h) => {
