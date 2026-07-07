@@ -147,10 +147,39 @@ def attribute_sources(
             enriched.append(out)
             continue
 
-        # --- Fallback: no attribution ---
-        out["source_icon"] = ""
-        out["pollution_source"] = ""
-        out["source_detail"] = ""
+        # --- Priority 4: AQI-level fallback ---
+        # WAQI map/bounds omits dominentpol for most stations. Rather than show
+        # nothing, derive a generic source label from the AQI level itself.
+        # In Indian cities, elevated AQI is overwhelmingly PM2.5-driven
+        # (vehicular exhaust, biomass burning, construction dust).
+        aqi = s.get("aqi") or 0
+        icon, label, detail = _aqi_fallback(aqi)
+        out["source_icon"] = icon
+        out["pollution_source"] = label
+        out["source_detail"] = detail
         enriched.append(out)
 
     return enriched
+
+
+def _aqi_fallback(aqi: float) -> tuple[str, str, str]:
+    """
+    Derive a generic source label from the AQI reading when no satellite,
+    citizen, or pollutant-chemistry signal is available.
+    """
+    if aqi <= 50:
+        return ("", "", "")  # clean air — no label needed
+    if aqi <= 100:
+        return ("🟢", "Satisfactory",
+                "Air quality is acceptable — sensitive individuals may notice mild effects")
+    if aqi <= 200:
+        return ("💨", "Moderate · Particulate",
+                "Likely vehicular exhaust and dust — typical urban pollution mix")
+    if aqi <= 300:
+        return ("⚠️", "Poor · Particulate",
+                "High particulate load — likely vehicular emissions, biomass or construction dust")
+    if aqi <= 400:
+        return ("🔴", "Very Poor · Combustion",
+                "Very high pollution — likely a mix of vehicular exhaust, open burning and industrial sources")
+    return ("☠️", "Severe · Hazardous",
+            "Extremely high pollution — possible open burning, industrial emissions, or atmospheric inversion trapping pollutants")
