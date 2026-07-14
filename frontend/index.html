@@ -47,9 +47,16 @@
   @keyframes emberGlowRed{0%,100%{text-shadow:0 0 20px rgba(233,63,51,0.35)}50%{text-shadow:0 0 42px rgba(233,63,51,0.8),0 0 72px rgba(242,147,5,0.3)}}
   .ember{color:#f6a63a;font-style:italic;animation:emberGlow 3.6s ease-in-out infinite;}
   .ember-red{color:#f2745a;animation:emberGlowRed 3.6s ease-in-out 0.4s infinite;}
-  [data-tile]:hover{transform:translateY(-10px) !important;box-shadow:0 34px 70px rgba(0,0,0,0.42);}
+  [data-tile]{--accent:var(--iris);}
+  [data-tile]:hover{transform:translateY(-10px) !important;box-shadow:0 34px 70px rgba(0,0,0,0.42);border-color:color-mix(in srgb,var(--accent) 42%,var(--border)) !important;}
   [data-tile] .tile-art{transition:transform .5s var(--ease-soft);}
   [data-tile]:hover .tile-art{transform:scale(1.04);}
+  [data-tile] .tile-title{transition:color .35s var(--ease-soft);}
+  [data-tile]:hover .tile-title{color:var(--accent);}
+  [data-tile] .tile-index{transition:opacity .35s var(--ease-soft),color .35s var(--ease-soft);}
+  [data-tile]:hover .tile-index{opacity:0.85;color:var(--accent);}
+  [data-tile] .tile-meta-val{transition:color .35s var(--ease-soft);}
+  [data-tile]:hover .tile-meta-val{color:var(--accent);}
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
@@ -165,12 +172,12 @@
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
 
         <!-- Card 1 · Sensors -->
-        <div data-reveal data-delay="60" data-tile style="position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
+        <div data-reveal data-delay="60" data-tile style="--accent:var(--iris);position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
           <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--iris),transparent 62%);"></div>
           <div style="position:absolute;top:-30%;left:-15%;width:60%;height:60%;background:radial-gradient(circle,var(--iris),transparent 70%);opacity:0.10;pointer-events:none;"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <span class="tile-index" style="position:absolute;top:14px;right:20px;font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:60px;line-height:1;color:var(--heading);opacity:0.07;pointer-events:none;">01</span>
+          <div style="display:flex;align-items:center;margin-bottom:20px;">
             <span style="display:inline-flex;align-items:center;gap:9px;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.2em;color:var(--text-2);"><span style="width:6px;height:6px;border-radius:50%;background:var(--iris);box-shadow:0 0 10px var(--iris);"></span>GROUND SENSORS</span>
-            <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--text-2);opacity:0.5;">01</span>
           </div>
           <div class="tile-art" style="background:linear-gradient(160deg,#17181b,#0d0e10);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px;">
             <svg viewBox="0 0 300 150" width="100%" style="display:block;">
@@ -221,18 +228,22 @@
             </svg>
           </div>
           <div style="margin-top:auto;padding-top:22px;">
-            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 10px;">Sensors</h3>
+            <h3 class="tile-title" style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 8px;">Ground sensors</h3>
             <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Live AQI from every official monitoring station — the baseline truth, wherever a monitor stands.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:15px;border-top:1px solid var(--border);">
+              <span style="font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:0.2em;color:var(--text-2);">SOURCE</span>
+              <span class="tile-meta-val" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.1em;color:var(--heading);">CPCB · 40+ STATIONS</span>
+            </div>
           </div>
         </div>
 
         <!-- Card 2 · Your eyes -->
-        <div data-reveal data-delay="150" data-tile style="position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
+        <div data-reveal data-delay="150" data-tile style="--accent:var(--cyan-signal);position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
           <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan-signal),transparent 62%);"></div>
           <div style="position:absolute;top:-30%;left:-15%;width:60%;height:60%;background:radial-gradient(circle,var(--cyan-signal),transparent 70%);opacity:0.10;pointer-events:none;"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <span class="tile-index" style="position:absolute;top:14px;right:20px;font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:60px;line-height:1;color:var(--heading);opacity:0.07;pointer-events:none;">02</span>
+          <div style="display:flex;align-items:center;margin-bottom:20px;">
             <span style="display:inline-flex;align-items:center;gap:9px;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.2em;color:var(--text-2);"><span style="width:6px;height:6px;border-radius:50%;background:var(--cyan-signal);box-shadow:0 0 10px var(--cyan-signal);"></span>VISION AI</span>
-            <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--text-2);opacity:0.5;">02</span>
           </div>
           <div class="tile-art" style="position:relative;background:linear-gradient(160deg,#17181b,#0d0e10);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px;overflow:hidden;">
             <svg viewBox="0 0 300 150" width="100%" style="display:block;">
@@ -280,18 +291,22 @@
             </svg>
           </div>
           <div style="margin-top:auto;padding-top:22px;">
-            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 10px;">Your eyes</h3>
+            <h3 class="tile-title" style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 8px;">Your eyes</h3>
             <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Photograph smoke or dust and vision AI classifies it — smoke, dust, haze, fire — then drops it on the map for everyone.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:15px;border-top:1px solid var(--border);">
+              <span style="font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:0.2em;color:var(--text-2);">MODEL</span>
+              <span class="tile-meta-val" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.1em;color:var(--heading);">4-CLASS · ON-DEVICE</span>
+            </div>
           </div>
         </div>
 
         <!-- Card 3 · From orbit -->
-        <div data-reveal data-delay="240" data-tile style="position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
+        <div data-reveal data-delay="240" data-tile style="--accent:var(--aqi-verypoor);position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:26px;min-height:400px;display:flex;flex-direction:column;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .35s var(--ease-soft),box-shadow .35s var(--ease-soft),border-color .35s var(--ease-soft);cursor:default;">
           <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--aqi-verypoor),transparent 62%);"></div>
           <div style="position:absolute;top:-30%;left:-15%;width:60%;height:60%;background:radial-gradient(circle,var(--aqi-verypoor),transparent 70%);opacity:0.09;pointer-events:none;"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <span class="tile-index" style="position:absolute;top:14px;right:20px;font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:60px;line-height:1;color:var(--heading);opacity:0.07;pointer-events:none;">03</span>
+          <div style="display:flex;align-items:center;margin-bottom:20px;">
             <span style="display:inline-flex;align-items:center;gap:9px;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.2em;color:var(--text-2);"><span style="width:6px;height:6px;border-radius:50%;background:var(--aqi-verypoor);box-shadow:0 0 10px var(--aqi-verypoor);"></span>SATELLITE</span>
-            <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--text-2);opacity:0.5;">03</span>
           </div>
           <div class="tile-art" style="position:relative;background:linear-gradient(160deg,#0f141c,#0a0b0d);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px;overflow:hidden;">
             <svg viewBox="0 0 300 150" width="100%" style="display:block;">
@@ -347,8 +362,12 @@
             </svg>
           </div>
           <div style="margin-top:auto;padding-top:22px;">
-            <h3 style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 10px;">From orbit</h3>
+            <h3 class="tile-title" style="font-family:'Playfair Display',serif;font-weight:400;font-size:30px;line-height:1.05;color:var(--heading);margin:0 0 8px;">From orbit</h3>
             <p style="font-weight:300;font-size:14px;line-height:1.55;color:var(--text-2);margin:0;">Satellite thermal-anomaly pixels catch fires no ground sensor is close enough to ever register.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:15px;border-top:1px solid var(--border);">
+              <span style="font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:0.2em;color:var(--text-2);">SENSOR</span>
+              <span class="tile-meta-val" style="font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.1em;color:var(--heading);">NASA FIRMS · 375 m</span>
+            </div>
           </div>
         </div>
       </div>
