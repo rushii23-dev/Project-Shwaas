@@ -111,6 +111,24 @@ async def forecast_location(lat: float, lon: float, hours: int = 24) -> dict:
     end_delta = projection[-1] - current_aqi
     trend = "rising" if end_delta > 10 else ("easing" if end_delta < -10 else "steady")
 
+    # One actionable sentence, tiered on how bad the day actually gets. The
+    # "cleanest 3h stretch" average decides whether any decent break exists.
+    w = min(3, len(projection))
+    cleanest_3h = min(
+        sum(projection[i:i + w]) / w for i in range(len(projection) - w + 1)
+    )
+    if peak < 100:
+        advice = "Air stays clean for the next 24h — no restrictions, enjoy being outside."
+    elif peak < SPIKE_AQI:
+        advice = ("Moderate air ahead — fine for most people; sensitive groups should "
+                  "limit long outdoor exertion.")
+    elif cleanest_3h < SPIKE_AQI:
+        advice = ("Air turns bad around the peak — keep windows closed and wear a mask "
+                  "outside once it climbs; get outdoor time in before it hits.")
+    else:
+        advice = ("No clean window in the next 24h — keep windows closed, run an air "
+                  "purifier if you have one, and wear an N95 if you must go out.")
+
     cur_r, peak_r = round(current_aqi), round(peak)
     peak_band = band_for_aqi(peak).label
     src = f"The PM2.5 model for {station_name or 'the nearest station'}"
@@ -141,6 +159,7 @@ async def forecast_location(lat: float, lon: float, hours: int = 24) -> dict:
             f"No spike expected."
         )
 
+    cur_band = band_for_aqi(current_aqi)
     return {
         "available": True,
         "station": station_name,
@@ -148,6 +167,9 @@ async def forecast_location(lat: float, lon: float, hours: int = 24) -> dict:
         "history": history,
         "forecast": forecast_points,
         "current_aqi": round(current_aqi, 1),
+        "current_band": cur_band.label,
+        "current_color": cur_band.color,
+        "advice": advice,
         "peak_aqi": round(peak, 1),
         "peak_in_hours": peak_in_hours,
         "peak_at": peak_at.isoformat(),

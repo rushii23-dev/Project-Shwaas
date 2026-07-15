@@ -884,10 +884,11 @@ class Shwaas extends Base {
   }
 
   /* ---------- 24H FORECAST (wired to the worst live hotspot) ----------
-   * Systematic readout, not just a squiggle: NOW / PEAK+when / TREND numbers,
-   * a spike line drawn at the REAL AQI-200 level of the chart's scale, the
-   * model's one-line reasoning (WHY), and the data source. The x-axis is
-   * honest too: the curve is [now → +24h] only, so "NOW" sits at x=0. */
+   * Built around what a person actually plans with: the air NOW, where it
+   * peaks and when, and one plain what-to-do sentence — plus the model's
+   * reasoning and source underneath. The chart stays honest: the curve is
+   * [now → +24h] only (NOW at x=0) and the spike line is drawn at the REAL
+   * AQI-200 level of the chart's scale. */
   async loadForecast() {
     const line = this.q("#sparkline"), dot = this.q("#sparkDot"), badge = this.q("#forecastSpike");
     const why = this.q("#fcWhy");
@@ -917,27 +918,33 @@ class Shwaas extends Base {
       line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
       requestAnimationFrame(() => { line.style.strokeDashoffset = "0"; if (dot) dot.style.opacity = "1"; });
 
-      // The numbers behind the curve.
+      // Verdict line: the air now, and where it's headed.
       const set = (sel, txt) => { const el = this.q(sel); if (el) el.textContent = txt; };
       const peak = Math.round(f.peak_aqi);
       set("#fcNow", String(Math.round(cur)));
-      set("#fcPeak", String(peak));
-      const peakEl = this.q("#fcPeak");
-      if (peakEl) peakEl.style.color = peak >= thr ? "#af2d24" : "#0f1011";
-      if (f.peak_at && f.peak_in_hours != null) {
+      const bandEl = this.q("#fcNowBand");
+      if (bandEl && f.current_band) {
+        bandEl.textContent = f.current_band.toUpperCase();
+        if (f.current_color) {
+          bandEl.style.background = f.current_color;
+          // Dark text on the light/yellow bands, white on the dark ones.
+          bandEl.style.color = ["#a3c853", "#fff833", "#f29305"].includes(f.current_color) ? "#0f1011" : "#fff";
+        }
+      }
+      const peakLine = this.q("#fcPeakLine");
+      if (peakLine && f.peak_at && f.peak_in_hours != null) {
         const t = new Date(f.peak_at);
         const opts = f.peak_in_hours >= 12
-          ? { weekday: "short", hour: "numeric" } : { hour: "numeric", minute: "2-digit" };
-        set("#fcPeakWhen", "+" + f.peak_in_hours + "H · " + t.toLocaleString([], opts).toUpperCase());
+          ? { weekday: "short", hour: "numeric" } : { hour: "numeric" };
+        const dir = f.trend === "easing" ? "→ eases toward" : "→ peaks";
+        peakLine.textContent = dir + " " + peak + " · " + t.toLocaleString([], opts).toUpperCase();
+        peakLine.style.color = peak >= thr ? "#af2d24" : "#3f4041";
       }
-      set("#fcTrend", f.trend === "rising" ? "▲ RISING" : f.trend === "easing" ? "▼ EASING" : "→ STEADY");
-      const trendEl = this.q("#fcTrend");
-      if (trendEl) { trendEl.style.fontSize = "17px"; trendEl.style.paddingTop = "5px";
-        trendEl.style.color = f.trend === "rising" ? "#af2d24" : f.trend === "easing" ? "#009865" : "#3f4041"; }
 
-      // WHY + WHEN the spike lands, in plain words from the model itself.
-      if (why && f.summary) why.textContent = f.summary;
-      set("#fcSource", ("SOURCE: WAQI PM2.5 FORECAST MODEL · STATION: " + (f.station || "NEAREST") ).toUpperCase());
+      // WHAT TO DO (plain words), then the model's reasoning, then the source.
+      if (why) why.textContent = f.advice || f.summary || "";
+      set("#fcSummary", f.advice ? (f.summary || "") : "");
+      set("#fcSource", ("SOURCE: WAQI PM2.5 FORECAST MODEL · STATION: " + (f.station || "NEAREST")).toUpperCase());
       if (badge) {
         badge.style.display = f.spike_expected ? "inline-block" : "none";
         if (f.spike_expected) badge.textContent = f.spike_in_hours != null && f.spike_in_hours > 1
