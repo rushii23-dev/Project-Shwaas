@@ -122,6 +122,8 @@ async def get_reports(city: str = "delhi"):
 @router.get("/fires")
 async def get_fires(city: str = "delhi", days: int = 2):
     c = get_city(city)
+    # FIRMS only accepts a 1-5 day range; clamp instead of letting it 400.
+    days = max(1, min(days, 5))
     fires = await fetch_firms(c, days=days)
     features = [
         {

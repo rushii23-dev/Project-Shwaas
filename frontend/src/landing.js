@@ -1064,18 +1064,48 @@ class Shwaas extends Base {
   }
 
   // Fetch fires + citizen reports for the region and render them.
+  // Fires use a 5-day window (FIRMS' maximum): the NRT feed can lag several
+  // days, so a 2-day window can land entirely inside the unprocessed gap and
+  // make a healthy feed look broken. Each marker's popup shows its own date.
   async loadReportsAndFires() {
     const R = this.regions[this.region]; if (!R) return;
     const signal = AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined;
-    try {
-      const [fRes, rRes] = await Promise.all([
-        fetch(API_BASE + "/api/fires?city=" + R.slug, { signal }),
-        fetch(API_BASE + "/api/reports?city=" + R.slug, { signal }),
-      ]);
-      this._latest.fires = (await fRes.json()).features || [];
-      this._latest.reports = (await rRes.json()).features || [];
-    } catch (e) { /* keep whatever we have */ }
+    const [fSet, rSet] = await Promise.allSettled([
+      fetch(API_BASE + "/api/fires?city=" + R.slug + "&days=5", { signal })
+        .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }),
+      fetch(API_BASE + "/api/reports?city=" + R.slug, { signal })
+        .then((r) => r.json()),
+    ]);
+    if (fSet.status === "fulfilled") {
+      this._latest.fires = fSet.value.features || [];
+      this._satStatus = { ok: true, count: this._latest.fires.length, at: new Date() };
+    } else {
+      // Keep prior markers, but say the feed itself is unreachable.
+      this._satStatus = { ok: false, count: null, at: new Date() };
+    }
+    if (rSet.status === "fulfilled") this._latest.reports = rSet.value.features || [];
+    this.renderSatStatus();
     this.renderLayers();
+  }
+
+  // The map-corner badge that makes "FIRMS is live but quiet" visibly different
+  // from "FIRMS is down". Green dot = feed answered; red = unreachable.
+  renderSatStatus() {
+    const dot = this.q("#satDot"), text = this.q("#satText");
+    const s = this._satStatus;
+    if (!dot || !text || !s) return;
+    const hhmm = s.at.getHours().toString().padStart(2, "0") + ":" + s.at.getMinutes().toString().padStart(2, "0");
+    if (!s.ok) {
+      dot.style.background = "var(--aqi-verypoor)";
+      dot.style.boxShadow = "0 0 8px var(--aqi-verypoor)";
+      text.textContent = "🛰️ NASA FIRMS UNREACHABLE · RETRIES ON REFRESH · " + hhmm;
+      return;
+    }
+    dot.style.background = "var(--aqi-good)";
+    dot.style.boxShadow = "0 0 8px var(--aqi-good)";
+    text.textContent = s.count > 0
+      ? "🛰️ NASA FIRMS LIVE · " + s.count + " THERMAL ANOMAL" + (s.count === 1 ? "Y" : "IES") + " (5 DAYS) · " + hhmm
+      : "🛰️ NASA FIRMS LIVE · NO FIRES DETECTED (5 DAYS) · " + hhmm;
   }
 
   initMap(tries = 0) {
