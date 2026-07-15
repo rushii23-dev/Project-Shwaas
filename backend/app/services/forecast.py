@@ -97,15 +97,65 @@ async def forecast_location(lat: float, lon: float, hours: int = 24) -> dict:
         }
         for i, p in enumerate(projection)
     ]
-    peak = max(projection) if projection else current_aqi
+
+    # --- Systematic spike diagnosis (all derived from the projection, nothing
+    # invented): WHEN the peak lands, WHEN the 200-line is crossed, which way
+    # the trend points, and a one-line summary the UI can show verbatim. ---
+    peak_idx = max(range(len(projection)), key=projection.__getitem__)
+    peak = projection[peak_idx]
+    peak_in_hours = peak_idx + 1
+    peak_at = now + timedelta(hours=peak_in_hours)
+    spike_idx = next((i for i, p in enumerate(projection) if p >= SPIKE_AQI), None)
+    spike_in_hours = spike_idx + 1 if spike_idx is not None else None
+
+    end_delta = projection[-1] - current_aqi
+    trend = "rising" if end_delta > 10 else ("easing" if end_delta < -10 else "steady")
+
+    cur_r, peak_r = round(current_aqi), round(peak)
+    peak_band = band_for_aqi(peak).label
+    src = f"The PM2.5 model for {station_name or 'the nearest station'}"
+    if current_aqi >= SPIKE_AQI:
+        summary = (
+            f"AQI is ALREADY above the {SPIKE_AQI} spike line at {cur_r}. "
+            f"{src} projects a peak of {peak_r} ({peak_band}) in ~{peak_in_hours}h."
+        )
+    elif spike_in_hours is not None:
+        summary = (
+            f"{src} projects AQI climbing {cur_r} → {peak_r} ({peak_band}), "
+            f"crossing the {SPIKE_AQI} spike line in ~{spike_in_hours}h "
+            f"and peaking in ~{peak_in_hours}h."
+        )
+    elif trend == "rising":
+        summary = (
+            f"{src} projects AQI rising {cur_r} → {peak_r} ({peak_band}) "
+            f"over ~{peak_in_hours}h, staying below the {SPIKE_AQI} spike line."
+        )
+    elif trend == "easing":
+        summary = (
+            f"{src} projects AQI easing from {cur_r} toward "
+            f"{round(projection[-1])} over the next 24h. No spike expected."
+        )
+    else:
+        summary = (
+            f"{src} projects AQI holding near {cur_r} for the next 24h. "
+            f"No spike expected."
+        )
+
     return {
         "available": True,
         "station": station_name,
         "method": method,
         "history": history,
         "forecast": forecast_points,
+        "current_aqi": round(current_aqi, 1),
         "peak_aqi": round(peak, 1),
+        "peak_in_hours": peak_in_hours,
+        "peak_at": peak_at.isoformat(),
+        "spike_threshold": SPIKE_AQI,
+        "spike_in_hours": spike_in_hours,
         "spike_expected": peak >= SPIKE_AQI,
+        "trend": trend,
+        "summary": summary,
     }
 
 

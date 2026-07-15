@@ -883,23 +883,69 @@ class Shwaas extends Base {
     } catch (e) { if (btn) { btn.textContent = "DISPATCH"; btn.disabled = false; } }
   }
 
-  /* ---------- 24H FORECAST (wired to the worst live hotspot) ---------- */
+  /* ---------- 24H FORECAST (wired to the worst live hotspot) ----------
+   * Systematic readout, not just a squiggle: NOW / PEAK+when / TREND numbers,
+   * a spike line drawn at the REAL AQI-200 level of the chart's scale, the
+   * model's one-line reasoning (WHY), and the data source. The x-axis is
+   * honest too: the curve is [now → +24h] only, so "NOW" sits at x=0. */
   async loadForecast() {
     const line = this.q("#sparkline"), dot = this.q("#sparkDot"), badge = this.q("#forecastSpike");
+    const why = this.q("#fcWhy");
     const hs = (this._latest.hotspots || []).slice().sort((a, b) => b.score - a.score)[0];
     if (!line || !hs) return;
     try {
       const f = await (await fetch(API_BASE + "/api/forecast?lat=" + hs.lat + "&lon=" + hs.lon)).json();
-      if (!f.available || !f.forecast || !f.forecast.length) return;
-      const series = f.history.map((h) => h.aqi).concat(f.forecast.map((p) => p.aqi));
-      const max = Math.max.apply(null, series) || 1;
+      if (!f.available || !f.forecast || !f.forecast.length) {
+        if (why && f.reason) why.textContent = f.reason;
+        return;
+      }
+      const cur = f.current_aqi != null ? f.current_aqi
+        : (f.history && f.history.length ? f.history[f.history.length - 1].aqi : f.forecast[0].aqi);
+      const series = [cur].concat(f.forecast.map((p) => p.aqi));
+      // Scale always includes the spike threshold so its dashed line sits at
+      // its true level — when the air is clean the line is visibly far above.
+      const thr = f.spike_threshold || 200;
+      const max = Math.max.apply(null, series.concat([thr * 1.08])) || 1;
       const n = series.length;
-      const pts = series.map((v, i) => (i * (320 / (n - 1))).toFixed(1) + "," + (100 - (v / max) * 88).toFixed(1)).join(" ");
-      line.setAttribute("points", pts);
+      const X = (i) => i * (320 / (n - 1)), Y = (v) => 100 - (v / max) * 88;
+      line.setAttribute("points", series.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(" "));
+      if (dot) { dot.setAttribute("cx", "320"); dot.setAttribute("cy", Y(series[n - 1]).toFixed(1)); }
+      const tl = this.q("#fcThreshold"), tlab = this.q("#fcThresholdLabel");
+      if (tl) { tl.setAttribute("y1", Y(thr).toFixed(1)); tl.setAttribute("y2", Y(thr).toFixed(1)); }
+      if (tlab) { tlab.setAttribute("y", (Y(thr) - 4).toFixed(1)); tlab.textContent = "SPIKE LINE · " + thr; }
       const len = line.getTotalLength ? line.getTotalLength() : 520;
       line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
       requestAnimationFrame(() => { line.style.strokeDashoffset = "0"; if (dot) dot.style.opacity = "1"; });
-      if (badge) badge.style.display = f.spike_expected ? "inline-block" : "none";
+
+      // The numbers behind the curve.
+      const set = (sel, txt) => { const el = this.q(sel); if (el) el.textContent = txt; };
+      const peak = Math.round(f.peak_aqi);
+      set("#fcNow", String(Math.round(cur)));
+      set("#fcPeak", String(peak));
+      const peakEl = this.q("#fcPeak");
+      if (peakEl) peakEl.style.color = peak >= thr ? "#af2d24" : "#0f1011";
+      if (f.peak_at && f.peak_in_hours != null) {
+        const t = new Date(f.peak_at);
+        const opts = f.peak_in_hours >= 12
+          ? { weekday: "short", hour: "numeric" } : { hour: "numeric", minute: "2-digit" };
+        set("#fcPeakWhen", "+" + f.peak_in_hours + "H · " + t.toLocaleString([], opts).toUpperCase());
+      }
+      set("#fcTrend", f.trend === "rising" ? "▲ RISING" : f.trend === "easing" ? "▼ EASING" : "→ STEADY");
+      const trendEl = this.q("#fcTrend");
+      if (trendEl) { trendEl.style.fontSize = "17px"; trendEl.style.paddingTop = "5px";
+        trendEl.style.color = f.trend === "rising" ? "#af2d24" : f.trend === "easing" ? "#009865" : "#3f4041"; }
+
+      // WHY + WHEN the spike lands, in plain words from the model itself.
+      if (why && f.summary) why.textContent = f.summary;
+      set("#fcSource", ("SOURCE: WAQI PM2.5 FORECAST MODEL · STATION: " + (f.station || "NEAREST") ).toUpperCase());
+      if (badge) {
+        badge.style.display = f.spike_expected ? "inline-block" : "none";
+        if (f.spike_expected) badge.textContent = f.spike_in_hours != null && f.spike_in_hours > 1
+          ? "SPIKE IN ~" + f.spike_in_hours + "H" : "SPIKE NOW";
+      }
+      // Name the place this forecast is for (the worst live hotspot).
+      const place = await this.reverseName(hs.lat, hs.lon);
+      if (place) set("#fcPlace", place.toUpperCase());
     } catch (e) { /* leave the placeholder curve */ }
   }
 

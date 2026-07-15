@@ -473,18 +473,39 @@
         <p data-reveal data-delay="160" style="font-weight:300;font-size:17px;line-height:1.55;color:var(--text-2);margin:0;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">Every hotspot carries a next-24h AQI forecast. When a spike is coming, you know to keep the kids in, move the run, close the window — before the air turns.</p>
       </div>
       <div data-reveal data-delay="120" style="background:#cacaca;border-radius:26px;padding:28px 30px;color:#0f1011;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease-soft),transform .9s var(--ease-soft);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
-          <span style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:#3f4041;">24H AQI FORECAST</span>
-          <span id="forecastSpike" style="display:none;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:#af2d24;border:1px solid #af2d24;padding:4px 8px;border-radius:5px;">SPIKE EXPECTED</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px;">
+          <span style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.16em;color:#3f4041;">24H AQI FORECAST · <span id="fcPlace">WORST LIVE HOTSPOT</span></span>
+          <span id="forecastSpike" style="display:none;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:0.14em;color:#af2d24;border:1px solid #af2d24;padding:4px 8px;border-radius:5px;white-space:nowrap;">SPIKE EXPECTED</span>
+        </div>
+        <!-- Systematic readout: the numbers behind the curve, not just a squiggle. -->
+        <div style="display:flex;gap:28px;margin-bottom:16px;">
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.16em;color:#6a6b6b;margin-bottom:3px;">NOW</div>
+            <div id="fcNow" style="font-family:'Inter',sans-serif;font-weight:600;font-size:26px;line-height:1;">—</div>
+          </div>
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.16em;color:#6a6b6b;margin-bottom:3px;">PEAK</div>
+            <div id="fcPeak" style="font-family:'Inter',sans-serif;font-weight:600;font-size:26px;line-height:1;">—</div>
+            <div id="fcPeakWhen" style="font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:0.08em;color:#6a6b6b;margin-top:4px;"></div>
+          </div>
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.16em;color:#6a6b6b;margin-bottom:3px;">TREND</div>
+            <div id="fcTrend" style="font-family:'Inter',sans-serif;font-weight:600;font-size:26px;line-height:1;">—</div>
+          </div>
         </div>
         <svg viewBox="0 0 320 110" width="100%" height="110" preserveAspectRatio="none" data-om-raster="true">
-          <line x1="0" y1="40" x2="320" y2="40" stroke="#af2d24" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"></line>
+          <!-- The spike line is positioned by JS at the REAL AQI-200 level of this chart's scale. -->
+          <line id="fcThreshold" x1="0" y1="40" x2="320" y2="40" stroke="#af2d24" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"></line>
+          <text id="fcThresholdLabel" x="318" y="36" text-anchor="end" font-family="Inter,sans-serif" font-size="8" letter-spacing="0.1em" fill="#af2d24" opacity="0.85">SPIKE LINE · 200</text>
           <polyline id="sparkline" points="0,78 40,74 80,80 120,70 160,66 200,52 240,34 280,22 320,16" fill="none" stroke="#00b3dd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:520;stroke-dashoffset:520;transition:stroke-dashoffset 1.8s var(--ease-inout);"></polyline>
           <circle id="sparkDot" cx="320" cy="16" r="4" fill="#00b3dd" style="opacity:0;transition:opacity .4s ease 1.4s;"></circle>
         </svg>
         <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:0.12em;color:#6a6b6b;">
           <span>NOW</span><span>+8H</span><span>+16H</span><span>+24H</span>
         </div>
+        <!-- WHY: the model's reasoning in one sentence, straight from the backend. -->
+        <div id="fcWhy" style="font-family:'Inter',sans-serif;font-size:12px;line-height:1.55;color:#26282a;margin-top:16px;padding-top:14px;border-top:1px solid rgba(15,16,17,0.14);">Connecting to the live PM2.5 forecast model…</div>
+        <div id="fcSource" style="font-family:'Inter',sans-serif;font-size:9px;letter-spacing:0.14em;color:#6a6b6b;margin-top:8px;"></div>
       </div>
     </div>
   </section>
