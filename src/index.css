@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/*
+ * Shwaas tokens. Cool "haze" neutrals instead of paper-cream; one iris accent
+ * for actions; AQI band colours are reserved for data.
+ */
+:root {
+  --haze: #e7ebef;
+  --paper: #f6f8fa;
+  --paper-2: #edf1f4;
+  --ink: #1c2533;
+  --ink-2: #4a5566;
+  --line: #cfd6de;
+  --iris: #4a43d1;
+  --iris-ink: #ffffff;
+  --iris-soft: #e2e0fb;
+  --focus: #4a43d1;
+  --ok: #2e7d52;
+  --warn: #9a4a10;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --haze: #0f141b;
+    --paper: #161d27;
+    --paper-2: #1d2632;
+    --ink: #e8edf3;
+    --ink-2: #a5b0be;
+    --line: #2c3746;
+    --iris: #a29dff;
+    --iris-ink: #14112e;
+    --iris-soft: #2a2752;
+    --focus: #b8b4ff;
+    --ok: #7fd3a4;
+    --warn: #f2b37a;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --haze: #0f141b;
+  --paper: #161d27;
+  --paper-2: #1d2632;
+  --ink: #e8edf3;
+  --ink-2: #a5b0be;
+  --line: #2c3746;
+  --iris: #a29dff;
+  --iris-ink: #14112e;
+  --iris-soft: #2a2752;
+  --focus: #b8b4ff;
+  --ok: #7fd3a4;
+  --warn: #f2b37a;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-haze: var(--haze);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-iris: var(--iris);
+  --color-iris-ink: var(--iris-ink);
+  --color-iris-soft: var(--iris-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --font-sans: "Anek Latin", "Anek Devanagari", ui-sans-serif, system-ui, sans-serif;
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--haze);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--haze);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    font-stretch: 100%;
+  }
+  :lang(hi) body {
+    line-height: 1.7;
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--iris);
+    color: var(--iris-ink);
+  }
+  dialog::backdrop {
+    background: rgb(15 20 27 / 0.55);
+    backdrop-filter: blur(3px);
+  }
+}
+
+@layer components {
+  /* Condensed display type: the voice of the headline sentences. */
+  .display {
+    font-stretch: 78%;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  /* Extra-wide numerals: the AQI reading reads like an instrument. */
+  .numeral {
+    font-stretch: 125%;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+  }
+  .section-title {
+    font-stretch: 85%;
+    font-weight: 600;
+    font-size: 1.75rem;
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    font-weight: 550;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--iris);
+    color: var(--iris-ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--iris) 86%, var(--ink));
+  }
+  .btn-quiet {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .btn-quiet:hover:not(:disabled) {
+    border-color: var(--ink-2);
+  }
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .field::placeholder {
+    color: var(--ink-2);
+    opacity: 0.8;
+  }
+  /* Choice chips are real checkboxes/radios underneath, styled via :has(). */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .chip:hover {
+    border-color: var(--ink-2);
+  }
+  .chip:has(input:checked) {
+    background: var(--iris-soft);
+    border-color: var(--iris);
+  }
+  .chip:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .chip input {
+    accent-color: var(--iris);
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+  }
+}
+
+/* The one orchestrated moment: smog settles over the skyline on load. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6%) scale(1.04);
+  }
+}
+@keyframes lift {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+.haze-settle {
+  animation: settle 2.2s var(--ease-settle) both;
+}
+.lift {
+  animation: lift 0.9s var(--ease-settle) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

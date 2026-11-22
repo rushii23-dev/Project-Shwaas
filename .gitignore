@@ -1,0 +1,21 @@
+# Env files (never commit real keys)
+.env
+.env.*
+!.env.example
+.env.txt
+
+# Node / build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+.vscode/
+.claude/
+*.tmp.*
+
+# Internal notes / local-only files (not for public repo)
+HANDOFF.md
+DESIGN_PROMPT.md
