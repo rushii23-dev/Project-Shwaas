@@ -1,5 +1,4 @@
 import { localeOf } from "../lib/format";
-import type { MessageKey } from "../lib/i18n";
 import { outlook } from "../lib/outlook";
 import type { HourPoint } from "../lib/types";
 import { useApp } from "../state/AppState";
@@ -27,7 +26,7 @@ export function OutlookSection({ hours }: { hours: HourPoint[] }) {
               <span className="tabular-nums">AQI {d.aqi}</span>
             </span>
             <span className={d.verdict ? "font-semibold" : "text-ink-2"}>
-              {d.verdict ? t(`outlook.${d.verdict}` as MessageKey) : t(`band.${d.band.id}` as MessageKey)}
+              {d.verdict ? t(`outlook.${d.verdict}`) : t(`band.${d.band.id}`)}
             </span>
           </li>
         ))}

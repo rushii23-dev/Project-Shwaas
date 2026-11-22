@@ -20,7 +20,7 @@ export type Route = (typeof ROUTES)[number];
 
 export function toRoute(pathname: string): Route | null {
   const clean = pathname.replace(/\/+$/, "") || "/";
-  return (ROUTES as readonly string[]).includes(clean) ? (clean as Route) : null;
+  return ROUTES.find((r) => r === clean) ?? null;
 }
 
 interface RouterState {

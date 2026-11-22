@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { isRecord } from "../lib/guards";
 import { translator, type Translate } from "../lib/i18n";
 import { parseProfile } from "../lib/profile";
 import { readJson, writeJson } from "../lib/storage";
@@ -25,8 +26,8 @@ const Ctx = createContext<AppState | null>(null);
 const KEYS = { lang: "shwaas:lang", theme: "shwaas:theme", place: "shwaas:place", profile: "shwaas:profile" } as const;
 
 export function parsePlace(raw: unknown): Place | null {
-  if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
+  if (!isRecord(raw)) return null;
+  const r = raw;
   const lat = Number(r.lat);
   const lon = Number(r.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;

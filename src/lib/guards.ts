@@ -10,9 +10,11 @@ export const isNum = (x: unknown): x is number => typeof x === "number" && Numbe
 export const isStr = (x: unknown): x is string => typeof x === "string";
 export const isOptional = <T>(x: unknown, guard: (v: unknown) => v is T): x is T | undefined => x === undefined || guard(x);
 export const isArrayOf = <T>(x: unknown, guard: (v: unknown) => v is T): x is T[] => Array.isArray(x) && x.every(guard);
+/** Narrow an unknown value to one member of a string enum, with no cast. */
+export const isOneOf = <T extends string>(list: readonly T[], x: unknown): x is T => list.some((v) => v === x);
 
 export const ROUTINE_KINDS: readonly RoutineKind[] = ["outdoor", "indoor", "commute", "health", "home"];
-export const isRoutineKind = (x: unknown): x is RoutineKind => isStr(x) && (ROUTINE_KINDS as readonly string[]).includes(x);
+export const isRoutineKind = (x: unknown): x is RoutineKind => isOneOf(ROUTINE_KINDS, x);
 
 function isHourPoint(x: unknown): x is HourPoint {
   return (

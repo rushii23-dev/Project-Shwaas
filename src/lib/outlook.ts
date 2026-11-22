@@ -33,9 +33,9 @@ export function outlook(hours: HourPoint[]): DayOutlook[] {
 
   const days = [...byDay.entries()]
     .filter(([, pm]) => pm.length >= MIN_HOURS)
-    .map(([date, pm]) => {
+    .map(([date, pm]): DayOutlook => {
       const aqi = pm25ToAqi(mean(pm));
-      return { date, aqi, band: bandFor(aqi), verdict: null as DayOutlook["verdict"] };
+      return { date, aqi, band: bandFor(aqi), verdict: null };
     });
   if (days.length < 2) return days;
 

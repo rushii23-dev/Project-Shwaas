@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Share2 } from "lucide-react";
 import { fmtHour } from "../lib/format";
-import type { MessageKey } from "../lib/i18n";
 import type { DayInsights } from "../lib/insights";
 import type { AirSnapshot } from "../lib/types";
 import { useApp } from "../state/AppState";
@@ -15,7 +14,7 @@ export function ShareCard({ snap, ins }: { snap: AirSnapshot; ins: DayInsights }
   const text = t("share.text", {
     place: snap.place.name,
     aqi: ins.nowAqi,
-    band: t(`band.${ins.band.id}` as MessageKey),
+    band: t(`band.${ins.band.id}`),
     best: span(ins.best2h),
     worst: span(ins.worst3h),
   });

@@ -26,3 +26,16 @@ export function countUp(scope: Element, lang: Lang): void {
     });
   });
 }
+
+/**
+ * Drift a section's photo against the scroll while the section passes
+ * through the viewport. Callers wrap this in a MOTION_OK matchMedia.
+ */
+export function parallax(target: string, trigger: string, { yPercent, scale }: { yPercent: number; scale: number }): void {
+  gsap.to(target, {
+    yPercent,
+    scale,
+    ease: "none",
+    scrollTrigger: { trigger, start: "top bottom", end: "bottom top", scrub: true },
+  });
+}

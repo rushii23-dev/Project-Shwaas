@@ -45,10 +45,10 @@ export default defineConfig({
       reporter: ["text-summary", "html"],
       // CI fails if coverage drops. The pure logic in src/lib is held to a higher bar.
       thresholds: {
-        statements: 85,
-        branches: 78,
-        functions: 85,
-        lines: 88,
+        statements: 95,
+        branches: 86,
+        functions: 95,
+        lines: 97,
         "src/lib/**": { statements: 95, branches: 85, functions: 95, lines: 95 },
       },
     },

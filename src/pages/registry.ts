@@ -25,10 +25,13 @@ export const PAGE_TITLES: Record<Route, MessageKey> = {
   "/about": "title.about",
 };
 
-export const PAGES = Object.fromEntries(Object.entries(LOADERS).map(([route, load]) => [route, lazy(load)])) as Record<
-  Route,
-  LazyExoticComponent<ComponentType>
->;
+export const PAGES: Record<Route, LazyExoticComponent<ComponentType>> = {
+  "/": lazy(LOADERS["/"]),
+  "/plan": lazy(LOADERS["/plan"]),
+  "/world": lazy(LOADERS["/world"]),
+  "/smog": lazy(LOADERS["/smog"]),
+  "/about": lazy(LOADERS["/about"]),
+};
 
 const started = new Set<Route>();
 

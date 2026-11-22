@@ -2,10 +2,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Send, Square } from "lucide-react";
 import { askAssistant, type ChatMessage, MAX_QUESTION_CHARS } from "../lib/ai/assistant";
 import { AiUnavailableError } from "../lib/ai/gemini";
+import { isAbort } from "../lib/api/http";
 import type { MessageKey } from "../lib/i18n";
 import type { DayInsights } from "../lib/insights";
 import type { AirSnapshot, Profile } from "../lib/types";
 import { useApp } from "../state/AppState";
+
+const SUGGESTIONS: readonly MessageKey[] = ["chat.s1", "chat.s2", "chat.s3"];
 
 /**
  * Streaming Q&A grounded in today's forecast and the household profile.
@@ -46,18 +49,16 @@ export default function ChatPanel({ snap, ins, profile }: { snap: AirSnapshot; i
       const answer = await askAssistant({ snap, ins, profile, lang, messages: history, signal: c.signal, onText });
       setMessages([...history, { role: "model", text: answer }]);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
+      if (isAbort(err)) {
         // Stopped by the user: keep whatever had arrived.
         if (partial.current) setMessages([...history, { role: "model", text: partial.current }]);
       } else {
-        setError(`chat.error.${err instanceof AiUnavailableError ? err.reason : "network"}` as MessageKey);
+        setError(`chat.error.${err instanceof AiUnavailableError ? err.reason : "network"}`);
       }
     } finally {
       setStreaming(null);
     }
   }
-
-  const suggestions: MessageKey[] = ["chat.s1", "chat.s2", "chat.s3"];
 
   return (
     <div className="flex h-full flex-col">
@@ -67,7 +68,7 @@ export default function ChatPanel({ snap, ins, profile }: { snap: AirSnapshot; i
             <div>
               <p className="text-ink-2">{t("chat.intro")}</p>
               <ul className="mt-4 grid gap-2">
-                {suggestions.map((s) => (
+                {SUGGESTIONS.map((s) => (
                   <li key={s}>
                     <button
                       type="button"
@@ -81,6 +82,7 @@ export default function ChatPanel({ snap, ins, profile }: { snap: AirSnapshot; i
               </ul>
             </div>
           )}
+          {/* The log only ever grows at the end, so a message's position is a stable key. */}
           {messages.map((m, i) => (
             <Bubble key={i} who={m.role === "user" ? t("chat.you") : t("chat.bot")} mine={m.role === "user"} text={m.text} />
           ))}
@@ -164,6 +166,7 @@ export function RichText({ text }: { text: string }) {
     if (bullet && last?.list) last.lines.push(content);
     else blocks.push({ list: bullet, lines: [content] });
   }
+  // Blocks are re-derived from the text on every render and never reordered, so position is a stable key.
   return (
     <div className="grid gap-2">
       {blocks.map((b, i) =>

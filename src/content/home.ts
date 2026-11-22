@@ -1,6 +1,6 @@
-/** Copy and sourced statistics for the home page, in both languages. */
-import { PHOTOS } from "../../content/photos";
-import { SRC, type Bilingual, type Source } from "../../content/text";
+/** Home page copy and sourced statistics, in both languages. */
+import { PHOTOS } from "./photos";
+import { SRC, type Bilingual, type Source } from "./text";
 
 export const copy = {
   heroTitle: {

@@ -1,4 +1,5 @@
 /** Household profile: defaults, validation and a stable hash for caching plans. */
+import { isNum, isOneOf, isRecord } from "./guards";
 import type { Activity, CommuteMode, CookingFuel, Heating, Profile, SensitiveGroup } from "./types";
 
 export const SENSITIVE: readonly SensitiveGroup[] = ["children", "elderly", "respiratory", "heart", "pregnant"];
@@ -28,14 +29,13 @@ export const DEFAULT_PROFILE: Profile = {
   activities: ["morning_exercise"],
 };
 
-const oneOf = <T extends string>(list: readonly T[], v: unknown, fallback: T): T =>
-  typeof v === "string" && (list as readonly string[]).includes(v) ? (v as T) : fallback;
+const oneOf = <T extends string>(list: readonly T[], v: unknown, fallback: T): T => (isOneOf(list, v) ? v : fallback);
 
 const subset = <T extends string>(list: readonly T[], v: unknown): T[] =>
-  Array.isArray(v) ? [...new Set(v.filter((x): x is T => typeof x === "string" && (list as readonly string[]).includes(x)))] : [];
+  Array.isArray(v) ? [...new Set(v.filter((x): x is T => isOneOf(list, x)))] : [];
 
-const clamp = (v: unknown, min: number, max: number, fallback: number) =>
-  typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
+const clamp = (v: unknown, min: number, max: number, fallback: number): number =>
+  isNum(v) ? Math.min(max, Math.max(min, v)) : fallback;
 
 /**
  * Validate anything read back from storage. Unknown values fall back to
@@ -43,10 +43,9 @@ const clamp = (v: unknown, min: number, max: number, fallback: number) =>
  * so stored data can never smuggle free text into an AI prompt.
  */
 export function parseProfile(raw: unknown): Profile | null {
-  if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  if (r.version !== 1) return null;
-  const c = (r.commute ?? {}) as Record<string, unknown>;
+  if (!isRecord(raw) || raw.version !== 1) return null;
+  const r = raw;
+  const c = isRecord(r.commute) ? r.commute : {};
   const d = DEFAULT_PROFILE;
   return {
     version: 1,

@@ -3,9 +3,12 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), display-capture=(), browsing-topics=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  X-Permitted-Cross-Domain-Policies: none
+  Origin-Agent-Cluster: ?1
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

@@ -1,5 +1,4 @@
 import { useId, useState, type ReactNode } from "react";
-import type { MessageKey } from "../lib/i18n";
 import { ACTIVITIES, DEFAULT_PROFILE, FUELS, HEATING, MODES, SENSITIVE } from "../lib/profile";
 import type { Profile } from "../lib/types";
 import { useApp } from "../state/AppState";
@@ -43,7 +42,7 @@ export function HouseholdForm({
       <Group legend={t("household.sensitive")}>
         {SENSITIVE.map((g) => (
           <Chip key={g} type="checkbox" checked={p.sensitive.includes(g)} onChange={() => toggle("sensitive", g)}>
-            {t(`sensitive.${g}` as MessageKey)}
+            {t(`sensitive.${g}`)}
           </Chip>
         ))}
       </Group>
@@ -51,7 +50,7 @@ export function HouseholdForm({
       <Group legend={t("household.activities")}>
         {ACTIVITIES.map((a) => (
           <Chip key={a} type="checkbox" checked={p.activities.includes(a)} onChange={() => toggle("activities", a)}>
-            {t(`act.${a}` as MessageKey)}
+            {t(`act.${a}`)}
           </Chip>
         ))}
       </Group>
@@ -65,7 +64,7 @@ export function HouseholdForm({
             checked={p.commute.mode === m}
             onChange={() => setP({ ...p, commute: { ...p.commute, mode: m } })}
           >
-            {t(`mode.${m}` as MessageKey)}
+            {t(`mode.${m}`)}
           </Chip>
         ))}
         {commuting && (
@@ -103,7 +102,7 @@ export function HouseholdForm({
       <Group legend={t("household.cooking")}>
         {FUELS.map((f) => (
           <Chip key={f} type="radio" name="fuel" checked={p.cooking === f} onChange={() => setP({ ...p, cooking: f })}>
-            {t(`fuel.${f}` as MessageKey)}
+            {t(`fuel.${f}`)}
           </Chip>
         ))}
       </Group>
@@ -111,7 +110,7 @@ export function HouseholdForm({
       <Group legend={t("household.heating")}>
         {HEATING.map((h) => (
           <Chip key={h} type="radio" name="heating" checked={p.heating === h} onChange={() => setP({ ...p, heating: h })}>
-            {t(`heat.${h}` as MessageKey)}
+            {t(`heat.${h}`)}
           </Chip>
         ))}
       </Group>

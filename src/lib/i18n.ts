@@ -232,6 +232,7 @@ const en = {
   "settings.clear": "Delete my data from this device",
   "settings.cleared": "Everything Shwaas saved on this device is gone.",
   close: "Close",
+  newTab: "(opens in a new tab)",
 
   "footer.method": "How the numbers are worked out",
   "footer.methodBody":
@@ -478,6 +479,7 @@ const hi: Record<MessageKey, string> = {
   "settings.clear": "इस डिवाइस से मेरा डेटा मिटाएँ",
   "settings.cleared": "श्वास का इस डिवाइस पर सहेजा सब कुछ मिटा दिया गया।",
   close: "बंद करें",
+  newTab: "(नए टैब में खुलता है)",
 
   "footer.method": "आँकड़े कैसे निकाले जाते हैं",
   "footer.methodBody":

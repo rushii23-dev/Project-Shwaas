@@ -73,7 +73,7 @@ npm run dev                  # http://localhost:5173
 | Script                              | What it does                                                              |
 | :---------------------------------- | :------------------------------------------------------------------------ |
 | `npm run check`                     | Typecheck, lint, format check, tests and build: everything CI runs        |
-| `npm test`                          | 182 unit, invariant, integration and accessibility tests                  |
+| `npm test`                          | 240 unit, invariant, integration, security and accessibility tests        |
 | `npm run coverage`                  | Coverage report; fails below the thresholds in `vite.config.ts`           |
 | `npm run format`                    | Prettier                                                                  |
 | `npm run build` / `npm run preview` | Production build, served locally **with the production security headers** |
@@ -94,10 +94,10 @@ Settings; it stays in their browser.
 
 ### Code quality
 
-- **TypeScript at its strictest:** `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`. No `any`, and no non-null assertions (`!`) in application code.
+- **TypeScript at its strictest:** `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`. No `any`, no non-null assertions (`!`), no lint suppressions, and no type casts on untrusted data in application code: translation keys are checked as template-literal types, and enums are narrowed by a runtime guard (`isOneOf`).
 - **Type-aware linting:** `typescript-eslint` _strictTypeChecked_ + _stylisticTypeChecked_, `react-hooks` (React Compiler rules) and `jsx-a11y/strict`. It catches floating promises, unsafe `any`, needless conditions and deprecated APIs. Zero warnings, enforced in CI.
 - **Formatting is not a debate:** Prettier, checked in CI; LF line endings via `.gitattributes`.
-- **Clear layers:** `lib/` is pure, framework-free logic (AQI maths, impact engine, planner, prompts, guards); `hooks/` is data flow; `components/`, `pages/` and `site/` are presentation. `lib/` never imports from the UI.
+- **Clear layers:** `lib/` is pure, framework-free logic (AQI maths, impact engine, planner, prompts, guards); `hooks/` is data flow; `content/` holds all bilingual long-form copy and sourced statistics; `components/`, `pages/` and `site/` are presentation, built from shared primitives (`Section`, `SectionTitle`, `CtaLink`, `ExternalLink`). `lib/` never imports from the UI.
 - **Data is validated at every trust boundary** (`src/lib/guards.ts`): API responses, model output and `localStorage` all arrive as `unknown` and are narrowed by runtime guards, never cast.
 - **Resilient by default:** an error boundary per page (with retry), a fallback plan when AI is unavailable, and cached data when the network isn't.
 - Bilingual copy is typed: a missing Hindi string is a compile error, and a test checks that both languages use the same `{placeholders}`.
@@ -111,7 +111,9 @@ See [SECURITY.md](SECURITY.md) for the full threat model. In short:
 - **No secrets in URLs.** The Gemini key travels in a header; there's a client-side rate limit, and users can bring their own key.
 - **Untrusted model output** is schema-constrained, re-validated against the catalogue and rendered only as text.
 - **Self-hosted fonts:** no Google Fonts requests, so visitors' IPs aren't sent to a font CDN.
-- `npm audit` runs in CI.
+- `npm audit` runs in CI; CodeQL (`security-extended`) scans every push; Dependabot keeps npm packages and Actions current; Actions are pinned to commit SHAs.
+- `src/security.test.ts` fails the build if the two header files drift apart, if the CSP ever allows inline or eval'd code, or if `connect-src` stops matching the hosts the code calls.
+- Links that open a new tab use `noopener noreferrer` and say so to screen-reader users.
 
 ### Privacy
 
@@ -131,12 +133,12 @@ See [SECURITY.md](SECURITY.md) for the full threat model. In short:
 
 ### Testing
 
-182 tests (Vitest, Testing Library, axe-core), with coverage gates in CI: 85% statements and 78% branches overall, 95% statements for `src/lib`. Current coverage is 89% statements and 82% branches; `src/lib` is at 98%.
+240 tests (Vitest, Testing Library, axe-core), with coverage gates in CI: 95% statements, 86% branches, 95% functions and 97% lines overall, and 95% statements for `src/lib`. Current coverage is 96% statements, 88% branches, 97% functions and 98% lines.
 
 - **Invariants:** every UI string translated with matching placeholders; catalogue ids unique and fully bilingual; planner rankings reference real items; photos credited with bilingual alt text.
 - **Design-token contrast:** a test parses `index.css` and fails if any text/background pair drops below WCAG 4.5:1 in either theme (and the same for every AQI band chip).
 - **Unit:** AQI maths, impact engine, family dose, outlook, pledge totals (no double counting), planner branches, plan validation, runtime guards against tampered storage, parsers, SSE streaming, rate limiting, cache dedupe and abort recovery, Trusted Types-safe text splitting.
-- **Integration:** first-run journey, geolocation (granted and denied), forecast failure and retry, AI-plan upgrade, every Gemini failure mode, streaming chat, pledges persisting, offline mode, tampered storage, sharing, editing the household, deleting all data, every page with motion enabled, Hindi.
+- **Integration:** first-run journey, geolocation (granted and denied), forecast failure and retry, AI-plan upgrade, every Gemini failure mode, streaming chat, pledges persisting, offline mode, tampered storage, sharing, editing the household, deleting all data, every page with motion enabled (and proof the animations actually ran), Hindi, settings (keys, theme, language), every household field, the mobile menu, focus moving to each new page, a crashing page recovering, chat stop and error states, and place-search failures.
 - **Accessibility:** axe-core runs on every page and dialog in tests, and in the real browser in both themes.
 
 ### Accessibility

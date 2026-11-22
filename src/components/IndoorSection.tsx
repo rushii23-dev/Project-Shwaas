@@ -1,5 +1,4 @@
 import { INDOOR_BY_ID } from "../lib/catalog";
-import type { MessageKey } from "../lib/i18n";
 import type { Plan } from "../lib/types";
 import { useApp } from "../state/AppState";
 
@@ -31,7 +30,7 @@ export function IndoorSection({ picks }: { picks: Plan["indoor"] }) {
                 </p>
               )}
               <p className="text-ink-2">
-                {t(`indoor.effort.${hack.effort}` as MessageKey)}, {t(`indoor.cost.${hack.cost}` as MessageKey).toLowerCase()}
+                {t(`indoor.effort.${hack.effort}`)}, {t(`indoor.cost.${hack.cost}`).toLowerCase()}
               </p>
             </div>
           </li>

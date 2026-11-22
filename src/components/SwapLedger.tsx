@@ -49,6 +49,7 @@ export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: 
       {/* Focusable so keyboard users can scroll the table sideways on small screens. */}
       <div tabIndex={0} role="region" aria-label={t("swaps.table")} className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-left">
+          <caption className="sr-only">{t("swaps.table")}</caption>
           <thead>
             <tr className="border-b-2 border-ink text-sm">
               <th scope="col" className="py-2 pr-4 font-semibold">
@@ -73,7 +74,7 @@ export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: 
                   <span className="mt-1 block max-w-[46ch] text-ink-2">{reason}</span>
                   <span className="mt-3 flex flex-wrap items-center gap-3">
                     <span className="inline-block rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-ink-2">
-                      {t(`swaps.scope.${swap.scope}` as MessageKey)}
+                      {t(`swaps.scope.${swap.scope}`)}
                     </span>
                     <label htmlFor={`${idBase}-${swap.id}`} className="chip min-h-9 py-1 text-sm font-semibold print:hidden">
                       <input

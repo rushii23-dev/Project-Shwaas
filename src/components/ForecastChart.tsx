@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { bandFor } from "../lib/aqi";
 import { fmtHour } from "../lib/format";
-import type { MessageKey } from "../lib/i18n";
 import type { DayInsights } from "../lib/insights";
 import type { HourPoint } from "../lib/types";
 import { useApp } from "../state/AppState";
@@ -156,7 +155,7 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
           >
             <span className="block font-semibold">{fmtHour(hovered.hour, lang)}</span>
             <span className="block tabular-nums">
-              AQI {hovered.aqi}, {t(`band.${bandFor(hovered.aqi).id}` as MessageKey)}
+              AQI {hovered.aqi}, {t(`band.${bandFor(hovered.aqi).id}`)}
             </span>
             <span className="block text-ink-2 tabular-nums">PM2.5 {Math.round(hovered.pm25)} µg/m³</span>
           </div>
@@ -173,6 +172,7 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
           className="mt-2 max-h-72 overflow-auto rounded-2xl border border-line"
         >
           <table className="w-full text-left text-sm">
+            <caption className="sr-only">{t("chart.table")}</caption>
             <thead className="sticky top-0 bg-paper-2">
               <tr>
                 <th scope="col" className="px-3 py-2">
@@ -193,7 +193,7 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
                     {fmtHour(d.hour, lang)}
                   </th>
                   <td className="px-3 py-1.5 tabular-nums">
-                    {d.aqi} ({t(`band.${bandFor(d.aqi).id}` as MessageKey)})
+                    {d.aqi} ({t(`band.${bandFor(d.aqi).id}`)})
                   </td>
                   <td className="px-3 py-1.5 tabular-nums">{Math.round(d.pm25)} µg/m³</td>
                 </tr>

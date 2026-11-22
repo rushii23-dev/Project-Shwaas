@@ -1,14 +1,13 @@
 import { Pencil } from "lucide-react";
-import type { MessageKey } from "../lib/i18n";
 import type { Profile } from "../lib/types";
 import { useApp } from "../state/AppState";
 
 export function HouseholdSummary({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
   const { t } = useApp();
   const parts = [
-    profile.sensitive.length ? profile.sensitive.map((g) => t(`sensitive.${g}` as MessageKey)).join(", ") : t("household.none"),
-    t(`mode.${profile.commute.mode}` as MessageKey),
-    t(`fuel.${profile.cooking}` as MessageKey),
+    profile.sensitive.length ? profile.sensitive.map((g) => t(`sensitive.${g}`)).join(", ") : t("household.none"),
+    t(`mode.${profile.commute.mode}`),
+    t(`fuel.${profile.cooking}`),
     ...(profile.purifier ? [t("household.purifier")] : []),
   ];
   return (

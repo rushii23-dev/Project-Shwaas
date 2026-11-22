@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
 import { clearMemoryCache } from "../lib/api/http";
 import { resetRateLimit } from "../lib/ai/gemini";
@@ -48,6 +48,10 @@ polyfill(window, "matchMedia", (query: string) => ({
   removeEventListener: noop,
   dispatchEvent: () => false,
 }));
+
+// Pages are lazy chunks. Their first render under coverage instrumentation, on a
+// busy CI runner, can take longer than Testing Library's 1 s default wait.
+configure({ asyncUtilTimeout: 5000 });
 
 beforeEach(() => {
   localStorage.clear();

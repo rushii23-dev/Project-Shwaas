@@ -30,22 +30,29 @@ export function Dialog({
     if (!open && d.open) d.close();
   }, [open]);
 
+  // A click on the backdrop lands on the <dialog> element itself and closes it. This is a mouse
+  // convenience on top of Escape and the Close button, so it is wired natively rather than as a
+  // JSX handler, which would wrongly present the whole dialog as a clickable control.
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    const onBackdrop = (e: MouseEvent) => {
+      if (e.target === d) onClose();
+    };
+    d.addEventListener("click", onBackdrop);
+    return () => d.removeEventListener("click", onBackdrop);
+  }, [onClose]);
+
   const shape =
     variant === "side"
       ? "m-0 ml-auto h-dvh max-h-dvh w-full max-w-lg rounded-none sm:rounded-l-3xl"
       : "m-auto w-[min(100%-2rem,38rem)] max-h-[min(90dvh,52rem)] rounded-3xl";
 
   return (
-    // Backdrop click is a mouse convenience; keyboard users close with Escape or the Close button.
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={ref}
       aria-labelledby={titleId}
       onClose={onClose}
-      onClick={(e) => {
-        // Click on the backdrop (the dialog element itself) closes it.
-        if (e.target === e.currentTarget) onClose();
-      }}
       className={`${shape} border border-line bg-paper p-0 text-ink shadow-2xl`}
     >
       {open && (

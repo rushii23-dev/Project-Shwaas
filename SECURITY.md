@@ -31,12 +31,29 @@ that answer it.
 
 ## Headers
 
-Defined once in `vercel.json` and mirrored to `public/_headers` for Netlify and
+Defined in `vercel.json` and mirrored to `public/_headers` for Netlify and
 Cloudflare Pages: Content-Security-Policy (above), Strict-Transport-Security,
 X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
-(geolocation only for this origin; camera, mic and payment off) and
-Cross-Origin-Opener-Policy. `npm run preview` serves the production build with
-the same headers, so violations surface locally before deploy.
+(geolocation only for this origin; camera, microphone, payment, motion sensors,
+screen capture and Topics off), Cross-Origin-Opener-Policy,
+Cross-Origin-Resource-Policy, X-Permitted-Cross-Domain-Policies and
+Origin-Agent-Cluster.
+
+`src/security.test.ts` keeps this honest: it fails if the two files drift
+apart, if any directive allows `'unsafe-inline'`, `'unsafe-eval'` or `*`, or if
+`connect-src` and the hosts the code actually calls ever differ in either
+direction. `npm run preview` serves the production build with the same
+headers, so violations surface locally before deploy.
+
+## Pipeline
+
+- **CI** (`.github/workflows/ci.yml`) runs typecheck, lint, format, tests with
+  coverage gates, build and `npm audit` on every push and pull request, with a
+  read-only token and actions pinned to commit SHAs.
+- **CodeQL** (`.github/workflows/codeql.yml`) runs GitHub's
+  `security-extended` queries on every push, pull request and weekly.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly update PRs for npm
+  packages and GitHub Actions.
 
 ## Known limits
 

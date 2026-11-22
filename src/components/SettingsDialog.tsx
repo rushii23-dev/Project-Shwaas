@@ -5,6 +5,8 @@ import { clearAll } from "../lib/storage";
 import { useApp, type ThemePref } from "../state/AppState";
 import { Dialog } from "./Dialog";
 
+const THEMES: readonly ThemePref[] = ["system", "light", "dark"];
+
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t, lang, setLang, theme, setTheme, reset } = useApp();
   const [key, setKey] = useState("");
@@ -37,7 +39,7 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-2 font-semibold">{t("settings.theme")}</legend>
           <div className="flex flex-wrap gap-2">
-            {(["system", "light", "dark"] as ThemePref[]).map((v) => (
+            {THEMES.map((v) => (
               <label key={v} className="chip">
                 <input type="radio" name="theme" checked={theme === v} onChange={() => setTheme(v)} />
                 {t(`theme.${v}`)}

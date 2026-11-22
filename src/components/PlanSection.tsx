@@ -1,7 +1,6 @@
 import { Car, HeartPulse, House, Printer, Sofa, Sparkles, Trees, type LucideIcon } from "lucide-react";
 import type { AiUnavailableError } from "../lib/ai/gemini";
 import { fmtClock } from "../lib/format";
-import type { MessageKey } from "../lib/i18n";
 import type { DoseComparison } from "../lib/impact";
 import type { Plan, RoutineKind } from "../lib/types";
 import { useApp } from "../state/AppState";
@@ -51,7 +50,7 @@ export function PlanSection({
             {t("plan.writing")}
           </span>
         ) : (
-          fallbackReason && <span>{t(`plan.why.${fallbackReason}` as MessageKey)}</span>
+          fallbackReason && <span>{t(`plan.why.${fallbackReason}`)}</span>
         )}
       </div>
 
@@ -91,7 +90,7 @@ export function PlanSection({
                   <span className="absolute -left-[13px] top-0 grid size-6 place-items-center rounded-full border-2 border-line bg-paper text-ink-2">
                     <Icon aria-hidden="true" size={13} />
                   </span>
-                  <p className="text-sm font-medium text-ink-2">{t(`kind.${r.kind}` as MessageKey)}</p>
+                  <p className="text-sm font-medium text-ink-2">{t(`kind.${r.kind}`)}</p>
                   <h3 className="text-xl font-semibold leading-snug">{r.title}</h3>
                   <p className="mt-1 max-w-[60ch] text-ink-2">{r.detail}</p>
                   {r.impact && <p className="mt-2 max-w-[60ch] border-l-4 border-accent pl-3 font-medium">{r.impact}</p>}

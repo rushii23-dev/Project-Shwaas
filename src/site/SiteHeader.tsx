@@ -6,11 +6,19 @@ import type { MessageKey } from "../lib/i18n";
 import { Link, useRouter, type Route } from "../router";
 import { useApp } from "../state/AppState";
 
-const NAV: { to: Route; key: MessageKey }[] = [
+interface NavItem {
+  to: Route;
+  key: MessageKey;
+}
+
+const NAV: readonly NavItem[] = [
   { to: "/world", key: "nav.world" },
   { to: "/smog", key: "nav.smog" },
   { to: "/about", key: "nav.about" },
 ];
+
+/** The mobile menu leads with the planner, which the desktop bar shows as a button. */
+const MOBILE_NAV: readonly NavItem[] = [{ to: "/plan", key: "nav.plan" }, ...NAV];
 
 /**
  * Fixed header. Over a photo hero it starts transparent and turns into a
@@ -94,7 +102,7 @@ export function SiteHeader({ overHero }: { overHero: boolean }) {
       <div id={menuId} hidden={!open} className="border-t border-white/10 px-5 pb-6 pt-2 md:hidden">
         <nav aria-label={t("nav.label")}>
           <ul className="grid">
-            {[{ to: "/plan" as Route, key: "nav.plan" as MessageKey }, ...NAV].map((n) => (
+            {MOBILE_NAV.map((n) => (
               <li key={n.to}>
                 <Link
                   to={n.to}

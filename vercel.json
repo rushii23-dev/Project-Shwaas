@@ -24,7 +24,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
+          "value": "geolocation=(self), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), display-capture=(), browsing-topics=()"
         },
         {
           "key": "Strict-Transport-Security",
@@ -33,6 +33,18 @@
         {
           "key": "Cross-Origin-Opener-Policy",
           "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "X-Permitted-Cross-Domain-Policies",
+          "value": "none"
+        },
+        {
+          "key": "Origin-Agent-Cluster",
+          "value": "?1"
         }
       ]
     },
@@ -51,10 +63,6 @@
         {
           "key": "Cache-Control",
           "value": "no-cache"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
         }
       ]
     }

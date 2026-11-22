@@ -1,6 +1,5 @@
 import { RefreshCw } from "lucide-react";
 import { fmtNumber, fmtTime } from "../lib/format";
-import type { MessageKey } from "../lib/i18n";
 import type { DayInsights } from "../lib/insights";
 import { explainWhy } from "../lib/planner";
 import type { AirSnapshot, Plan } from "../lib/types";
@@ -44,7 +43,7 @@ export function SkyPanel({
               className="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold"
               style={{ background: ins.band.color, color: ins.band.ink }}
             >
-              {t(`band.${ins.band.id}` as MessageKey)}
+              {t(`band.${ins.band.id}`)}
             </span>
           </div>
         </div>
