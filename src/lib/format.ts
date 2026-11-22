@@ -11,7 +11,8 @@ export function fmtHour(hour: number, lang: Lang): string {
 }
 
 /** "HH:MM" from an hour (and optional minutes). */
-export const hhmm = (hour: number, min = 0) => `${String(((hour % 24) + 24) % 24).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+export const hhmm = (hour: number, min = 0) =>
+  `${String(((hour % 24) + 24) % 24).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 
 /** "07:30" → "7:30 am". */
 export function fmtClock(time: string, lang: Lang): string {
@@ -23,6 +24,21 @@ export function fmtClock(time: string, lang: Lang): string {
   return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "am" : "pm"}`;
 }
 
+/** BCP 47 locale for each UI language (Indian digit grouping in both). */
+export const localeOf = (lang: Lang): string => (lang === "hi" ? "hi-IN" : "en-IN");
+
+/** Up to `digits` decimals, e.g. 4.2 or 12. */
 export function fmtNumber(n: number, lang: Lang, digits = 0): string {
-  return new Intl.NumberFormat(lang === "hi" ? "hi-IN" : "en-IN", { maximumFractionDigits: digits }).format(n);
+  return new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: digits }).format(n);
+}
+
+/** Exactly `decimals` decimals inside a template, e.g. "{n} million" → "8.1 million". */
+export function fmtFixed(n: number, decimals: number, template: string, lang: Lang): string {
+  const s = new Intl.NumberFormat(localeOf(lang), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n);
+  return template.replace("{n}", s);
+}
+
+/** Local clock time, e.g. "4:10 pm". */
+export function fmtTime(ms: number, lang: Lang): string {
+  return new Intl.DateTimeFormat(localeOf(lang), { hour: "numeric", minute: "2-digit" }).format(ms);
 }

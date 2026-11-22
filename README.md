@@ -3,7 +3,7 @@
 **A GenAI assistant that helps families plan their day around winter smog.**
 
 Shwaas reads the hour-by-hour air forecast for wherever you live and turns it
-into a plan for *your* household: when to step out, how to keep the air at home
+into a plan for _your_ household: when to step out, how to keep the air at home
 clean, and which everyday swaps cut pollution the most. Every choice comes with
 its effect worked out in numbers.
 
@@ -11,18 +11,46 @@ It is a static web app. There is no backend: the browser talks directly to
 Open-Meteo, OpenStreetMap and Gemini, so there is no server to wake up and
 first paint comes straight from a CDN.
 
+## The site
+
+| Page                    | What's on it                                                                                                                                                                                                                       |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home** `/`            | A cinematic scroll story: India Gate glowing through smog with live Delhi AQI, the human cost (sourced counters), a pinned horizontal gallery of _why winter is the worst_, how Shwaas helps, and a sky that clears as you scroll. |
+| **Plan my day** `/plan` | The assistant: place → household → a live, personalised 24-hour plan.                                                                                                                                                              |
+| **World air** `/world`  | Live AQI for 14 cities ranked in real time, the global numbers, South Asia's burden, and how smoke crosses borders.                                                                                                                |
+| **Smog guide** `/smog`  | How small PM2.5 is, what it does to the body, how to read the AQI, what protects you (and what doesn't), and common myths.                                                                                                         |
+| **About** `/about`      | How the plan is made, privacy, data sources and photo credits.                                                                                                                                                                     |
+
+Every statistic links to its source (WHO, State of Global Air 2024, AQLI 2025,
+IQAir 2024, US EPA). All photographs are real, from Unsplash, credited on the
+image and on the About page.
+
+**Design.** The palette is "sodium night": the amber of street lamps glowing
+through Delhi's winter haze is the single accent, set against cool slate and
+mist, so the photographs and data carry the colour. Type is Newsreader (an
+editorial serif) for display and Schibsted Grotesk (a newspaper grotesque) for
+text, with Tiro Devanagari Hindi and Anek Devanagari for Hindi. The logo is a
+winter sun seen through bands of smog.
+
+**Motion.** GSAP ScrollTrigger and Lenis smooth scrolling, used where motion
+carries meaning: the headline lifts in once, numbers count up, the causes
+gallery scrolls sideways, the preview follows the step you are reading, and the
+smog lifts off a clear sky. All of it switches off for readers who prefer
+reduced motion.
+
 ---
 
 ## What it does for a family
 
-| The brief asks for | What Shwaas does |
-|:--|:--|
-| **Low-emission daily routines** | A time-stamped plan for the next 24 hours, built around the cleanest and dirtiest windows in the forecast and the family's own habits (school run, morning walk, kids' play, commute). |
-| **Indoor air quality hacks** | Up to six tips picked for this home (purifier or DIY fan-filter, timed airing, cooking exhaust, coils and agarbatti, sealing gaps, N95s), each with its measured reduction range. |
-| **Sustainable alternatives** | An impact ledger of swaps (metro, bus, carpool, WFH on severe days, engine-off, LPG instead of chulha, composting instead of burning) with CO₂ and PM2.5 saved per week. |
-| **Tailored to location and lifestyle** | Any city worldwide. A 30-second household profile: sensitive members, commute mode and distance, cooking fuel, heating, purifier, indoor smoking, routines. |
-| **Clearly explaining the impact** | "Breathing this air for a day is like smoking 5.6 cigarettes." "Moving your workout to 1 pm means 70% less PM2.5." "These swaps save 46 kg CO₂ a month." All of these are computed, never generated. |
-| **Families and communities** | English and Hindi. One-tap sharing of the day's clean-air window to a building or school group. Community swaps (carpool, report burning). |
+| The brief asks for                     | What Shwaas does                                                                                                                                                                                                     |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Low-emission daily routines**        | A time-stamped plan for the next 24 hours, built around the cleanest and dirtiest windows in the forecast and the family's own habits (school run, morning walk, kids' play, commute).                               |
+| **Indoor air quality hacks**           | Up to six tips picked for this home (purifier or DIY fan-filter, timed airing, cooking exhaust, coils and agarbatti, sealing gaps, N95s), each with its measured reduction range.                                    |
+| **Sustainable alternatives**           | An impact ledger of swaps (metro, bus, carpool, WFH on severe days, engine-off, LPG instead of chulha, composting instead of burning) with CO₂ and PM2.5 saved per week.                                             |
+| **Tailored to location and lifestyle** | Any city worldwide. A 30-second household profile: sensitive members, commute mode and distance, cooking fuel, heating, purifier, indoor smoking, routines.                                                          |
+| **Clearly explaining the impact**      | "Breathing this air for a day is like smoking 5.6 cigarettes." "Following this plan's timing, your family breathes 49% less smog outdoors." "Your pledges save 38 kg of CO₂ a month." All computed, never generated. |
+| **Choices with consequences**          | Tick the swaps you'll actually make and the ledger switches to _your_ monthly total, kept on your device. A three-day outlook names the clearest day for outings and the smoggiest one to work from home.            |
+| **Families and communities**           | English and Hindi. One-tap sharing of the day's clean-air window to a building or school group. A print-friendly plan for the fridge door or grandparents without smartphones. Works offline with the last forecast. |
 
 ### How the AI is used, and kept honest
 
@@ -42,11 +70,12 @@ cp .env.example .env.local   # add a Gemini key (optional: works without one)
 npm run dev                  # http://localhost:5173
 ```
 
-| Script | What it does |
-|:--|:--|
-| `npm run check` | Typecheck, lint, test and build: everything CI runs |
-| `npm test` | 78 unit, integration and accessibility tests (Vitest + Testing Library + axe-core) |
-| `npm run coverage` | Coverage for `src/lib` |
+| Script                              | What it does                                                              |
+| :---------------------------------- | :------------------------------------------------------------------------ |
+| `npm run check`                     | Typecheck, lint, format check, tests and build: everything CI runs        |
+| `npm test`                          | 182 unit, invariant, integration and accessibility tests                  |
+| `npm run coverage`                  | Coverage report; fails below the thresholds in `vite.config.ts`           |
+| `npm run format`                    | Prettier                                                                  |
 | `npm run build` / `npm run preview` | Production build, served locally **with the production security headers** |
 
 ### Deploy
@@ -64,51 +93,74 @@ Settings; it stays in their browser.
 ## Engineering notes
 
 ### Code quality
-- TypeScript `strict` with `noUncheckedIndexedAccess`; ESLint with `typescript-eslint`, `react-hooks` (including the React Compiler rules) and `jsx-a11y/strict`.
-- Clear layers: `lib/` is pure, tested logic (AQI maths, impact engine, planner, prompts, validation); `hooks/` is data flow; `components/` is presentation.
-- Bilingual copy is typed: a missing Hindi string is a compile error.
+
+- **TypeScript at its strictest:** `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`. No `any`, and no non-null assertions (`!`) in application code.
+- **Type-aware linting:** `typescript-eslint` _strictTypeChecked_ + _stylisticTypeChecked_, `react-hooks` (React Compiler rules) and `jsx-a11y/strict`. It catches floating promises, unsafe `any`, needless conditions and deprecated APIs. Zero warnings, enforced in CI.
+- **Formatting is not a debate:** Prettier, checked in CI; LF line endings via `.gitattributes`.
+- **Clear layers:** `lib/` is pure, framework-free logic (AQI maths, impact engine, planner, prompts, guards); `hooks/` is data flow; `components/`, `pages/` and `site/` are presentation. `lib/` never imports from the UI.
+- **Data is validated at every trust boundary** (`src/lib/guards.ts`): API responses, model output and `localStorage` all arrive as `unknown` and are narrowed by runtime guards, never cast.
+- **Resilient by default:** an error boundary per page (with retry), a fallback plan when AI is unavailable, and cached data when the network isn't.
+- Bilingual copy is typed: a missing Hindi string is a compile error, and a test checks that both languages use the same `{placeholders}`.
 
 ### Security
-- **No secrets in URLs.** The Gemini key travels in the `x-goog-api-key` header.
-- **Model output is untrusted.** It is parsed, schema-checked, catalogue-checked and length-capped, and rendered only as React text. `dangerouslySetInnerHTML` is banned by a lint rule, and a test proves an `<img onerror>` payload renders as text.
-- **Prompt-injection resistant by construction.** The household profile is validated against enums before it can reach a prompt; stored data is re-validated on every read (`parseProfile`, `parsePlace`).
-- **Strict CSP** (`script-src 'self'`, `connect-src` limited to the five APIs, `frame-ancestors 'none'`), plus HSTS, nosniff, Referrer-Policy and Permissions-Policy. `npm run preview` serves the build with these headers so violations show up locally.
-- **Quota protection:** a client-side limit of 8 AI calls a minute, and AI plans cached for an hour.
-- `npm audit`: 0 vulnerabilities. CI runs it on every push.
+
+See [SECURITY.md](SECURITY.md) for the full threat model. In short:
+
+- **Trusted Types enforced** (`require-trusted-types-for 'script'`): DOM-XSS sinks throw instead of running. That meant replacing GSAP SplitText (which uses `innerHTML`) with a DOM-API word splitter.
+- **Strict CSP** with no `'unsafe-inline'` anywhere: `script-src 'self'; style-src 'self'; font-src 'self'`, `connect-src` and `img-src` pinned to the exact third parties, and `frame-ancestors 'none'`. Plus HSTS, nosniff, Referrer-Policy and Permissions-Policy.
+- **No secrets in URLs.** The Gemini key travels in a header; there's a client-side rate limit, and users can bring their own key.
+- **Untrusted model output** is schema-constrained, re-validated against the catalogue and rendered only as text.
+- **Self-hosted fonts:** no Google Fonts requests, so visitors' IPs aren't sent to a font CDN.
+- `npm audit` runs in CI.
 
 ### Privacy
+
 - Coordinates are rounded to about 1 km before any request leaves the device.
-- The household profile lives only in `localStorage`. Settings has one button to delete everything Shwaas stored.
+- The household profile and pledges live only in `localStorage`. There are no accounts, cookies or analytics, and Settings has one button that deletes everything.
 
 ### Efficiency
+
 - No server round-trip and no cold start. Requests go straight to the APIs, in parallel.
-- **Stale-while-revalidate:** the last forecast and plan paint instantly from cache; fresh data follows. Concurrent requests for the same thing share one fetch.
+- **Works offline:** a small service worker serves the app shell and content-hashed assets from cache. It never caches API or AI responses.
+- **Stale-while-revalidate data:** the last forecast and plan paint instantly from validated cache, and fresh data follows. Concurrent requests share one fetch.
 - **Instant plan, then upgrade:** the rule-based plan renders immediately and the AI plan replaces it when ready.
-- **Small bundle:** about 39 KB gzipped of app code. React is a separate long-cached chunk, and the chat is lazy-loaded (2 KB) on first open. No chart or animation libraries: the forecast chart is hand-built SVG and the motion is CSS.
-- Background refresh every 15 minutes, only while the tab is visible.
+- **Code-split by page, prefetched on intent:** each page is its own chunk, and it starts downloading when a link is hovered, focused or touched. The animation libraries load only on story pages; the planner never downloads them.
+- **Fonts:** self-hosted and subset by `unicode-range`, so an English page downloads two Latin font files and no Devanagari. Fonts are never inlined.
+- **Images:** AVIF/WebP from Unsplash's CDN, sized per viewport. The home hero is preloaded in parallel with the page code, since it's the largest paint.
+- Zero layout shift (CLS 0 measured on the home page). Background refresh every 15 minutes, only while the tab is visible.
 
 ### Testing
-- **Unit:** AQI breakpoints, band edges, cigarette equivalence, risk levels, commute and idling impact maths, time-window search, planner ordering and household fit, plan validation, SSE parsing, rate limiting, cache dedupe and abort recovery, storage validation.
-- **Integration:** the full first-run journey (search → household → plan) against mocked APIs, the AI-plan upgrade, streaming chat, and each Gemini failure mode mapping to an honest fallback.
-- **Accessibility:** axe-core runs inside the tests on every screen and dialog.
+
+182 tests (Vitest, Testing Library, axe-core), with coverage gates in CI: 85% statements and 78% branches overall, 95% statements for `src/lib`. Current coverage is 89% statements and 82% branches; `src/lib` is at 98%.
+
+- **Invariants:** every UI string translated with matching placeholders; catalogue ids unique and fully bilingual; planner rankings reference real items; photos credited with bilingual alt text.
+- **Design-token contrast:** a test parses `index.css` and fails if any text/background pair drops below WCAG 4.5:1 in either theme (and the same for every AQI band chip).
+- **Unit:** AQI maths, impact engine, family dose, outlook, pledge totals (no double counting), planner branches, plan validation, runtime guards against tampered storage, parsers, SSE streaming, rate limiting, cache dedupe and abort recovery, Trusted Types-safe text splitting.
+- **Integration:** first-run journey, geolocation (granted and denied), forecast failure and retry, AI-plan upgrade, every Gemini failure mode, streaming chat, pledges persisting, offline mode, tampered storage, sharing, editing the household, deleting all data, every page with motion enabled, Hindi.
+- **Accessibility:** axe-core runs on every page and dialog in tests, and in the real browser in both themes.
 
 ### Accessibility
-- Semantic landmarks, one `h1` per screen, a skip link, and native `<dialog>` for modals (focus trap, Escape and focus return come from the browser).
-- Real checkboxes and radios behind the choice chips, with visible focus rings everywhere.
-- Colour is never the only signal: every AQI band has a text label, and the chart has a text summary, per-bar tooltips and a full table view. Band colours were checked for colour-blind separation.
-- Checked with axe in light and dark mode: zero violations. Respects `prefers-reduced-motion` and `prefers-color-scheme`. Hindi uses a Devanagari typeface with taller line height.
+
+Targets WCAG 2.2 AA; there's an accessibility statement on the About page.
+
+- Semantic landmarks, one `h1` per page, a skip link, and native `<dialog>` modals. Route changes move focus to the new heading.
+- Focus is never hidden under the fixed header (2.4.11); scrollable tables are keyboard-reachable.
+- Colour is never the only signal: AQI bands have text labels, and every chart has a summary and a table view.
+- Respects reduced motion, increased contrast, Windows High Contrast (forced colours) and dark mode. Decorative loops stop after a few cycles (2.2.2).
+- Hindi throughout, with Devanagari typefaces and taller line height, and a print stylesheet for a paper copy of the plan.
 
 ---
 
 ## Data and method
 
-| Source | Used for |
-|:--|:--|
+| Source                                                                          | Used for                                                     |
+| :------------------------------------------------------------------------------ | :----------------------------------------------------------- |
 | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) | Current and hourly PM2.5, PM10 and US AQI, worldwide, no key |
-| [Open-Meteo Forecast](https://open-meteo.com/en/docs) | Wind and boundary-layer height (explains inversions) |
-| Open-Meteo Geocoding, OpenStreetMap Nominatim | Place search and "use my location" |
-| [WAQI](https://aqicn.org/api/) *(optional)* | Nearest official monitoring station |
-| Google Gemini | Personalised plan and chat |
+| [Open-Meteo Forecast](https://open-meteo.com/en/docs)                           | Wind and boundary-layer height (explains inversions)         |
+| Open-Meteo Geocoding, OpenStreetMap Nominatim                                   | Place search and "use my location"                           |
+| [WAQI](https://aqicn.org/api/) _(optional)_                                     | Nearest official monitoring station                          |
+| Google Gemini                                                                   | Personalised plan and chat                                   |
+| [Unsplash](https://unsplash.com/license)                                        | Photography (credited per image)                             |
 
 Method notes: the headline AQI is the US EPA 24-hour figure; hourly bars use
 each hour's instant PM2.5 so the daily cycle is visible. Cigarette equivalence

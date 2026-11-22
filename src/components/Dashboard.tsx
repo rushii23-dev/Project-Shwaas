@@ -1,16 +1,18 @@
 import { lazy, Suspense, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { useAir } from "../hooks/useAir";
+import { useOnline } from "../lib/pwa";
 import { usePlan } from "../hooks/usePlan";
 import type { Place, Profile } from "../lib/types";
 import { useApp } from "../state/AppState";
 import { Dialog } from "./Dialog";
 import { Footer } from "./Footer";
 import { ForecastChart } from "./ForecastChart";
-import { Header } from "./Header";
+import { PlanBar } from "./PlanBar";
 import { HouseholdForm } from "./HouseholdForm";
 import { HouseholdSummary } from "./HouseholdSummary";
 import { IndoorSection } from "./IndoorSection";
+import { OutlookSection } from "./OutlookSection";
 import { PlaceSearch } from "./PlaceSearch";
 import { PlanSection } from "./PlanSection";
 import { SettingsDialog } from "./SettingsDialog";
@@ -25,33 +27,39 @@ type Open = null | "place" | "settings" | "household" | "chat";
 export function Dashboard({ place, profile }: { place: Place; profile: Profile }) {
   const { t, lang, setPlace, setProfile } = useApp();
   const air = useAir(place);
+  const online = useOnline();
   const { insights, plan, writing, fallbackReason, regenerate } = usePlan(air.snap, profile, lang);
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
 
   return (
-    <>
-      <a href="#plan-heading" className="sr-only z-50 rounded-full bg-iris px-4 py-2 text-iris-ink focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
-        {t("skip")}
-      </a>
-      <Header onPlace={() => setOpen("place")} onSettings={() => setOpen("settings")} />
+    <div className="pt-[var(--header-h)] print:pt-0">
+      <PlanBar onPlace={() => setOpen("place")} onSettings={() => setOpen("settings")} />
 
-      <main id="main">
+      <div>
         {!air.snap ? (
           <StatusScreen error={air.error} onRetry={air.refresh} />
         ) : (
           <div className="mx-auto grid max-w-[90rem] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             {insights && <SkyPanel snap={air.snap} ins={insights} plan={plan} loading={air.loading} onRefresh={air.refresh} />}
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-16 px-4 py-12 sm:px-8 lg:px-14">
-              {air.error && (
-                <p role="alert" className="rounded-2xl bg-paper-2 px-4 py-3 text-warn">
-                  {t("sky.stale")}
+              {(air.error || !online) && (
+                <p role="status" className="rounded-2xl bg-paper-2 px-4 py-3 text-warn">
+                  {online ? t("sky.stale") : t("sky.offline")}
                 </p>
               )}
               {plan && insights && (
                 <>
-                  <PlanSection plan={plan} nowHour={insights.nowHour} writing={writing} fallbackReason={fallbackReason} onRegenerate={regenerate} />
+                  <PlanSection
+                    plan={plan}
+                    nowHour={insights.nowHour}
+                    dose={insights.familyDose}
+                    writing={writing}
+                    fallbackReason={fallbackReason}
+                    onRegenerate={regenerate}
+                  />
                   <ForecastChart hours={air.snap.hourly} ins={insights} />
+                  <OutlookSection hours={air.snap.hourly} />
                   <IndoorSection picks={plan.indoor} />
                   <SwapLedger picks={plan.swaps} profile={profile} />
                   <HouseholdSummary profile={profile} onEdit={() => setOpen("household")} />
@@ -62,13 +70,13 @@ export function Dashboard({ place, profile }: { place: Place; profile: Profile }
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       {air.snap && insights && (
         <button
           type="button"
           onClick={() => setOpen("chat")}
-          className="btn btn-primary fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 min-h-13 px-5 text-base shadow-xl"
+          className="btn btn-primary fixed bottom-[max(1rem,env(safe-area-inset-bottom))] print:hidden right-4 z-40 min-h-13 px-5 text-base shadow-xl"
         >
           <MessageCircle aria-hidden="true" size={20} />
           {t("chat.open")}
@@ -109,7 +117,7 @@ export function Dashboard({ place, profile }: { place: Place; profile: Profile }
           </Suspense>
         )}
       </Dialog>
-    </>
+    </div>
   );
 }
 
@@ -126,7 +134,7 @@ function StatusScreen({ error, onRetry }: { error: boolean; onRetry: () => void 
         </div>
       ) : (
         <p role="status" className="flex items-center gap-3 text-lg text-ink-2">
-          <span className="size-3 animate-pulse rounded-full bg-iris" aria-hidden="true" />
+          <span className="size-3 animate-pulse rounded-full bg-accent" aria-hidden="true" />
           {t("loading")}
         </p>
       )}

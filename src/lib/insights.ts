@@ -4,7 +4,16 @@
  * so the headline numbers never depend on a model.
  */
 import { bandFor, cigarettesPerDay, outdoorRisk, type Band, type Risk, WHO_PM25_24H } from "./aqi";
-import { bestWindow, doseCut, mean, type TimeWindow, worstWindow } from "./impact";
+import {
+  bestWindow,
+  doseCut,
+  familyDose,
+  mean,
+  MOVE_MIN_CUT_PCT,
+  type DoseComparison,
+  type TimeWindow,
+  worstWindow,
+} from "./impact";
 import type { AirSnapshot, HourPoint, Profile } from "./types";
 
 export type Driver = "low_wind" | "inversion" | "dust" | "combustion";
@@ -26,12 +35,16 @@ export interface DayInsights {
   drivers: Driver[];
   /** When the family exercises in the morning: how much cleaner the best window is. */
   exerciseShift: { fromHour: number; to: TimeWindow; cutPct: number } | null;
+  /** The whole household's outdoor dose, usual times vs. the plan's timing. */
+  familyDose: DoseComparison | null;
 }
 
 export function computeInsights(snap: AirSnapshot, profile: Profile): DayInsights {
   const next24 = snap.hourly.slice(0, 24);
+  const firstHour = next24[0];
+  if (!firstHour) throw new Error("computeInsights needs at least one forecast hour");
   const mean24Pm25 = mean(next24.map((h) => h.pm25));
-  const peak = next24.reduce((a, b) => (b.aqi > a.aqi ? b : a), next24[0]!);
+  const peak = next24.reduce((a, b) => (b.aqi > a.aqi ? b : a), firstHour);
 
   const first = mean(next24.slice(0, 3).map((h) => h.aqi));
   const last = mean(next24.slice(-6).map((h) => h.aqi));
@@ -53,12 +66,12 @@ export function computeInsights(snap: AirSnapshot, profile: Profile): DayInsight
     const at7 = next24.find((h) => h.hour === 7);
     if (at7) {
       const cutPct = doseCut(at7.pm25, best2h.avgPm25);
-      if (cutPct >= 15) exerciseShift = { fromHour: 7, to: best2h, cutPct };
+      if (cutPct >= MOVE_MIN_CUT_PCT) exerciseShift = { fromHour: 7, to: best2h, cutPct };
     }
   }
 
   return {
-    nowHour: next24[0]?.hour ?? 0,
+    nowHour: firstHour.hour,
     nowAqi: snap.current.aqi,
     band: bandFor(snap.current.aqi),
     risk: outdoorRisk(snap.current.aqi, profile.sensitive),
@@ -71,5 +84,6 @@ export function computeInsights(snap: AirSnapshot, profile: Profile): DayInsight
     worst3h,
     drivers,
     exerciseShift,
+    familyDose: familyDose(next24, profile.activities, best2h, worst3h),
   };
 }

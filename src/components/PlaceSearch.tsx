@@ -20,8 +20,7 @@ export function PlaceSearch({ onPick, focusOnMount = false }: { onPick: (p: Plac
     if (focusOnMount) inputRef.current?.focus();
   }, [focusOnMount]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function search() {
     if (q.trim().length < 2) return;
     ctrl.current?.abort();
     const c = new AbortController();
@@ -40,7 +39,14 @@ export function PlaceSearch({ onPick, focusOnMount = false }: { onPick: (p: Plac
 
   return (
     <div>
-      <form onSubmit={submit} role="search" className="flex gap-2">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void search();
+        }}
+        role="search"
+        className="flex gap-2"
+      >
         <label htmlFor={inputId} className="sr-only">
           {t("search.label")}
         </label>
@@ -64,7 +70,7 @@ export function PlaceSearch({ onPick, focusOnMount = false }: { onPick: (p: Plac
 
       <div aria-live="polite" className="mt-3">
         {failed && <p className="text-warn">{t("error.air")}</p>}
-        {results && results.length === 0 && <p className="text-ink-2">{t("search.none")}</p>}
+        {results?.length === 0 && <p className="text-ink-2">{t("search.none")}</p>}
         {results && results.length > 0 && (
           <>
             <p className="sr-only">{t("search.results", { n: results.length })}</p>
@@ -76,7 +82,7 @@ export function PlaceSearch({ onPick, focusOnMount = false }: { onPick: (p: Plac
                     onClick={() => onPick(r)}
                     className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-paper-2 px-4 py-3 text-left hover:border-line"
                   >
-                    <MapPin aria-hidden="true" size={18} className="shrink-0 text-iris" />
+                    <MapPin aria-hidden="true" size={18} className="shrink-0 text-accent-text" />
                     <span>
                       <span className="block font-semibold">{r.name}</span>
                       {r.region && <span className="block text-sm text-ink-2">{r.region}</span>}

@@ -36,13 +36,13 @@ export function parsePlace(raw: unknown): Place | null {
 }
 
 function initialLang(): Lang {
-  const saved = readJson<string>(KEYS.lang);
+  const saved = readJson(KEYS.lang);
   if (saved === "en" || saved === "hi") return saved;
-  return typeof navigator !== "undefined" && navigator.language?.startsWith("hi") ? "hi" : "en";
+  return typeof navigator !== "undefined" && navigator.language.startsWith("hi") ? "hi" : "en";
 }
 
 function initialTheme(): ThemePref {
-  const saved = readJson<string>(KEYS.theme);
+  const saved = readJson(KEYS.theme);
   return saved === "light" || saved === "dark" ? saved : "system";
 }
 

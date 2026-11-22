@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { DELHI, makeProfile, openMeteoAir, openMeteoWeather } from "../test/fixtures";
 import { coarse, normalizeAir } from "./api/airQuality";
 import { cached } from "./api/http";
+import { isNum, isStr } from "./guards";
 import { parseStation } from "./api/waqi";
+import { normalizeWorld, WORLD_CITIES } from "./api/world";
 import { parseProfile, profileHash } from "./profile";
 import { parsePlace } from "../state/AppState";
 
@@ -42,7 +44,15 @@ describe("coarse", () => {
 describe("parseStation (WAQI)", () => {
   const at = { lat: 28.61, lon: 77.21 };
   const now = Date.parse("2026-11-22T10:00:00Z");
-  const feed = (over: object) => ({ status: "ok", data: { aqi: 240, city: { name: "ITO", geo: [28.63, 77.24] as [number, number] }, time: { iso: "2026-11-22T14:00:00+05:30" }, ...over } });
+  const feed = (over: object) => ({
+    status: "ok",
+    data: {
+      aqi: 240,
+      city: { name: "ITO", geo: [28.63, 77.24] as [number, number] },
+      time: { iso: "2026-11-22T14:00:00+05:30" },
+      ...over,
+    },
+  });
 
   it("accepts a nearby, fresh station", () => {
     expect(parseStation(feed({}), at, now)).toMatchObject({ name: "ITO", aqi: 240 });
@@ -98,18 +108,29 @@ describe("parsePlace (untrusted storage)", () => {
 describe("cached", () => {
   it("shares one request between concurrent callers", async () => {
     const load = vi.fn(async () => 42);
-    const [a, b] = await Promise.all([cached("k", 1000, load), cached("k", 1000, load)]);
+    const [a, b] = await Promise.all([cached("k", 1000, isNum, load), cached("k", 1000, isNum, load)]);
     expect([a, b]).toEqual([42, 42]);
     expect(load).toHaveBeenCalledTimes(1);
-    await cached("k", 1000, load);
+    await cached("k", 1000, isNum, load);
     expect(load).toHaveBeenCalledTimes(1); // served from cache
   });
 
   it("recovers when the shared request was aborted by its first caller", async () => {
     const aborted = () => Promise.reject(new DOMException("Aborted", "AbortError"));
-    const first = cached("k2", 1000, aborted).catch((e: Error) => e.name);
-    const second = cached("k2", 1000, async () => "fresh");
+    const first = cached("k2", 1000, isStr, aborted).catch((e: unknown) => (e instanceof DOMException ? e.name : ""));
+    const second = cached("k2", 1000, isStr, async () => "fresh");
     expect(await first).toBe("AbortError");
     expect(await second).toBe("fresh");
+  });
+});
+
+describe("normalizeWorld", () => {
+  it("pairs readings with cities in order, drops gaps and sorts worst first", () => {
+    const raw = WORLD_CITIES.map((_, i) => ({ current: { us_aqi: i === 2 ? null : 50 + i * 10, pm2_5: 10 + i } }));
+    const out = normalizeWorld(raw);
+    expect(out).toHaveLength(WORLD_CITIES.length - 1);
+    expect(out[0]!.city.id).toBe("sydney");
+    expect(out.map((c) => c.city.id)).not.toContain(WORLD_CITIES[2]!.id);
+    expect(out[0]!.cigarettes).toBe(1); // 23 µg/m³ ÷ 22, one decimal
   });
 });

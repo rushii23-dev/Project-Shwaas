@@ -23,7 +23,7 @@ export function ShareCard({ snap, ins }: { snap: AirSnapshot; ins: DayInsights }
   async function share() {
     const url = window.location.origin;
     try {
-      if (navigator.share) {
+      if (typeof navigator.share === "function") {
         await navigator.share({ text, url });
         return;
       }
@@ -35,13 +35,13 @@ export function ShareCard({ snap, ins }: { snap: AirSnapshot; ins: DayInsights }
   }
 
   return (
-    <section aria-labelledby="share-heading" className="rounded-3xl border border-line bg-paper p-6">
+    <section aria-labelledby="share-heading" className="rounded-3xl border border-line bg-paper p-6 print:hidden">
       <h2 id="share-heading" className="section-title text-2xl">
         {t("share.title")}
       </h2>
       <p className="mt-2 max-w-[56ch] text-ink-2">{t("share.body")}</p>
-      <blockquote className="mt-4 max-w-[56ch] border-l-4 border-iris pl-4 text-ink">{text}</blockquote>
-      <button type="button" onClick={share} className="btn btn-primary mt-5">
+      <blockquote className="mt-4 max-w-[56ch] border-l-4 border-accent pl-4 text-ink">{text}</blockquote>
+      <button type="button" onClick={() => void share()} className="btn btn-primary mt-5">
         <Share2 aria-hidden="true" size={18} />
         {t("share.button")}
       </button>

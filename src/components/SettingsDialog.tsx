@@ -13,7 +13,11 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
   const keyId = useId();
   const helpId = useId();
 
-  const keyStatus = hasUserKey() ? t("settings.keyActive.user") : getApiKey() && hasBundledKey() ? t("settings.keyActive.bundled") : t("settings.keyActive.none");
+  const keyStatus = hasUserKey()
+    ? t("settings.keyActive.user")
+    : getApiKey() && hasBundledKey()
+      ? t("settings.keyActive.bundled")
+      : t("settings.keyActive.none");
 
   return (
     <Dialog open={open} onClose={onClose} title={t("settings.title")}>

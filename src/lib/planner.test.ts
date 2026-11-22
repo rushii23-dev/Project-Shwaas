@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeProfile, makeSnap } from "../test/fixtures";
+import { makeHours, makeProfile, makeSnap } from "../test/fixtures";
 import { computeInsights } from "./insights";
 import { buildFallbackPlan, minutesFromNow } from "./planner";
 
@@ -66,5 +66,61 @@ describe("minutesFromNow", () => {
     expect(minutesFromNow("16:30", 15)).toBe(90);
     expect(minutesFromNow("07:00", 15)).toBe(16 * 60);
     expect(minutesFromNow("15:00", 15)).toBe(0);
+  });
+});
+
+describe("planner branches", () => {
+  const snapAt = (pm25: number) => makeSnap({ current: { ...makeSnap().current, aqi: Math.round(pm25 * 2), pm25 } });
+
+  it.each([
+    [10, [], "A good day to be outside"],
+    [30, [], "Mostly fine outside"],
+    [50, ["children"] as const, "Keep outdoor time short"], // AQI 110: sensitive households step up
+    [200, [], "Stay in where you can"],
+  ] as const)("headline at PM2.5 %s with %j", (pm25, sensitive, expected) => {
+    const flat = makeSnap({
+      hourly: makeHours(Array<number>(24).fill(pm25)),
+      current: { ...makeSnap().current, aqi: Math.round(pm25 * 2.2) },
+    });
+    const p = makeProfile({ sensitive: [...sensitive] });
+    expect(buildFallbackPlan(computeInsights(flat, p), p, "en").headline).toContain(expected);
+  });
+
+  it("covers every habit, commute type and health need", () => {
+    const p = makeProfile({
+      activities: ["kids_play", "evening_walk", "school_run"],
+      sensitive: ["respiratory"],
+      commute: { mode: "car_petrol", km: 8, daysPerWeek: 5 },
+      purifier: true,
+    });
+    const titles = buildFallbackPlan(computeInsights(snapAt(70), p), p, "en").routine.map((r) => r.title);
+    expect(titles).toEqual(
+      expect.arrayContaining([
+        "School run with masks on",
+        "Commute",
+        "Purifier on in the bedroom",
+        "Keep medicines within reach",
+        "Outdoor play around 1 pm",
+      ]),
+    );
+    expect(titles.some((t) => /evening walk/i.test(t))).toBe(true);
+  });
+
+  it("keeps children indoors when even the cleanest window is unhealthy", () => {
+    const p = makeProfile({ activities: ["kids_play"] });
+    const smoggy = makeSnap({ hourly: makeHours(Array<number>(24).fill(160)) });
+    const titles = buildFallbackPlan(computeInsights(smoggy, p), p, "en").routine.map((r) => r.title);
+    expect(titles).toContain("Indoor play today");
+  });
+
+  it("explains calm, clean days honestly", () => {
+    const clean = makeSnap({
+      current: { ...makeSnap().current, pm25: 8, pm10: 12, aqi: 30 },
+      hourly: makeHours(Array<number>(24).fill(8)).map((h) => ({ ...h, windKmh: 20, blhM: 900 })),
+    });
+    const p = makeProfile({ commute: { mode: "wfh", km: 0, daysPerWeek: 0 } });
+    const plan = buildFallbackPlan(computeInsights(clean, p), p, "hi");
+    expect(plan.why).toContain("हवा");
+    expect(plan.routine.some((r) => r.kind === "commute")).toBe(false);
   });
 });

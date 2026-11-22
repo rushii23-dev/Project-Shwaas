@@ -25,7 +25,11 @@ export function IndoorSection({ picks }: { picks: Plan["indoor"] }) {
               <p className="mt-1 max-w-[60ch] text-ink-2">{reason}</p>
             </div>
             <div className="grid content-start gap-1 text-sm sm:text-right">
-              {hack.cut && <p className="font-semibold text-ok">{t(CUT_KEY[hack.cutKind ?? "indoor"], { a: hack.cut[0], b: hack.cut[1] })}</p>}
+              {hack.cut && (
+                <p className="font-semibold text-ok">
+                  {t(CUT_KEY[hack.cutKind ?? "indoor"], { a: hack.cut[0], b: hack.cut[1] })}
+                </p>
+              )}
               <p className="text-ink-2">
                 {t(`indoor.effort.${hack.effort}` as MessageKey)}, {t(`indoor.cost.${hack.cost}` as MessageKey).toLowerCase()}
               </p>

@@ -6,7 +6,7 @@
  * model. Factors are rounded, comparison-grade estimates; sources are listed
  * in `SOURCES` and shown in the app.
  */
-import type { CommuteMode, HourPoint, Profile } from "./types";
+import type { Activity, CommuteMode, HourPoint, Profile } from "./types";
 
 export interface ModeFactor {
   /** kg CO₂e per passenger-km. */
@@ -33,12 +33,18 @@ export const SOURCES = [
   { id: "india-ghg", label: "India GHG Program (2015), India-specific road transport emission factors" },
   { id: "oecd-nonexhaust", label: "OECD (2020), Non-exhaust particulate emissions from road transport" },
   { id: "berkeley", label: "Berkeley Earth (2015), Air pollution and cigarette equivalence" },
-  { id: "purifier-rct", label: "Cheek et al. (2021), Portable air cleaners and residential exposure to PM2.5 — systematic review" },
+  {
+    id: "purifier-rct",
+    label: "Cheek et al. (2021), Portable air cleaners and residential exposure to PM2.5 — systematic review",
+  },
   { id: "cr-box", label: "Dal Porto et al. (2022), Corsi-Rosenthal box air cleaner performance" },
   { id: "coils", label: "Liu et al. (2003), Mosquito coil emissions and health implications" },
   { id: "who-hap", label: "WHO (2022), Household air pollution fact sheet" },
   { id: "plants", label: "Cummings & Waring (2019), Potted plants do not improve indoor air quality" },
-  { id: "burning", label: "Wiedinmyer et al. (2014), Global emissions of trace gases and particulates from open burning of waste" },
+  {
+    id: "burning",
+    label: "Wiedinmyer et al. (2014), Global emissions of trace gases and particulates from open burning of waste",
+  },
 ] as const;
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -106,7 +112,10 @@ function scanWindow(hours: HourPoint[], length: number, fromHour: number, toHour
   }
   if (!best) return null;
   const slice = usable.slice(best.i, best.i + length);
-  return { start: slice[0]!, end: slice[slice.length - 1]!, avgPm25: best.avg, avgAqi: Math.round(mean(slice.map((h) => h.aqi))) };
+  const start = slice[0];
+  const end = slice[slice.length - 1];
+  if (!start || !end) return null;
+  return { start, end, avgPm25: best.avg, avgAqi: Math.round(mean(slice.map((h) => h.aqi))) };
 }
 
 /** Cleanest window: when a walk, school run or airing-out should happen. */
@@ -121,4 +130,71 @@ export const worstWindow = (hours: HourPoint[], length: number, fromHour = 6, to
 export function doseCut(fromPm25: number, toPm25: number): number {
   if (fromPm25 <= 0 || toPm25 >= fromPm25) return 0;
   return Math.round((1 - toPm25 / fromPm25) * 100);
+}
+
+/* --------------------------------------------------------- family dose */
+
+/** When each habit usually happens, for how long, and how hard people breathe doing it (× resting rate). */
+export const HABITS: Record<Activity, { hour: number; hours: number; breathing: number }> = {
+  morning_exercise: { hour: 7, hours: 1, breathing: 3 },
+  school_run: { hour: 7, hours: 0.5, breathing: 1.5 },
+  kids_play: { hour: 17, hours: 1, breathing: 2 },
+  evening_walk: { hour: 18, hours: 1, breathing: 1.5 },
+};
+
+/** A move has to cut the dose by at least this much to be worth suggesting. */
+export const MOVE_MIN_CUT_PCT = 15;
+
+/**
+ * Whether the plan moves an activity from its usual hour to the cleanest
+ * window. The planner and the dose estimate both use this, so the headline
+ * percentage always matches the advice the family actually sees.
+ */
+export function movesToBestWindow(
+  activity: Activity,
+  usualPm25: number,
+  best: TimeWindow | null,
+  worst: TimeWindow | null,
+): boolean {
+  if (!best) return false;
+  switch (activity) {
+    case "school_run":
+      return false; // school hours are fixed; the plan advises masks and quieter routes instead
+    case "kids_play":
+      return best.avgAqi <= 150; // otherwise the plan says to play indoors
+    case "morning_exercise":
+      return doseCut(usualPm25, best.avgPm25) >= MOVE_MIN_CUT_PCT;
+    case "evening_walk":
+      return worst !== null && worst.start.hour >= 17 && doseCut(usualPm25, best.avgPm25) > 0;
+  }
+}
+
+export interface DoseComparison {
+  /** Relative outdoor dose at the family's usual times (µg/m³ × hours × breathing). */
+  usual: number;
+  /** The same activities at the times the plan suggests. */
+  planned: number;
+  cutPct: number;
+}
+
+/** How much less PM2.5 the family breathes outdoors by following today's timing advice. */
+export function familyDose(
+  hours: HourPoint[],
+  activities: readonly Activity[],
+  best: TimeWindow | null,
+  worst: TimeWindow | null,
+): DoseComparison | null {
+  const day = hours.slice(0, 24);
+  let usual = 0;
+  let planned = 0;
+  for (const activity of activities) {
+    const habit = HABITS[activity];
+    const at = day.find((h) => h.hour === habit.hour);
+    if (!at) continue;
+    const weight = habit.hours * habit.breathing;
+    usual += at.pm25 * weight;
+    planned += (best && movesToBestWindow(activity, at.pm25, best, worst) ? Math.min(at.pm25, best.avgPm25) : at.pm25) * weight;
+  }
+  if (usual <= 0) return null;
+  return { usual: Math.round(usual), planned: Math.round(planned), cutPct: doseCut(usual, planned) };
 }

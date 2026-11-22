@@ -8,21 +8,16 @@
       name="description"
       content="Shwaas turns your local air forecast into a family plan: when to go out, how to keep the air at home clean, and which everyday swaps cut pollution the most."
     />
-    <meta name="theme-color" content="#e7ebef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f131a" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0f141b" media="(prefers-color-scheme: dark)" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Warm up connections the first screen needs. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Warm up the only third-party origins the first screen needs. -->
     <link rel="preconnect" href="https://air-quality-api.open-meteo.com" crossorigin />
     <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,300..700&family=Anek+Latin:wdth,wght@75..125,300..700&display=swap"
-    />
+    <link rel="preconnect" href="https://images.unsplash.com" />
   </head>
   <body>
     <noscript>Shwaas needs JavaScript to read the air forecast for your area.</noscript>

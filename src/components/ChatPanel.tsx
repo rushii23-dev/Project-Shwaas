@@ -69,7 +69,11 @@ export default function ChatPanel({ snap, ins, profile }: { snap: AirSnapshot; i
               <ul className="mt-4 grid gap-2">
                 {suggestions.map((s) => (
                   <li key={s}>
-                    <button type="button" className="w-full rounded-2xl border border-line bg-paper-2 px-4 py-3 text-left hover:border-ink-2" onClick={() => void ask(t(s))}>
+                    <button
+                      type="button"
+                      className="w-full rounded-2xl border border-line bg-paper-2 px-4 py-3 text-left hover:border-ink-2"
+                      onClick={() => void ask(t(s))}
+                    >
                       {t(s)}
                     </button>
                   </li>
@@ -117,7 +121,12 @@ export default function ChatPanel({ snap, ins, profile }: { snap: AirSnapshot; i
             }}
           />
           {streaming !== null ? (
-            <button type="button" className="btn btn-quiet size-12 p-0" onClick={() => ctrl.current?.abort()} aria-label={t("chat.stop")}>
+            <button
+              type="button"
+              className="btn btn-quiet size-12 p-0"
+              onClick={() => ctrl.current?.abort()}
+              aria-label={t("chat.stop")}
+            >
               <Square aria-hidden="true" size={18} />
             </button>
           ) : (
@@ -136,7 +145,7 @@ function Bubble({ who, mine, text }: { who: string; mine: boolean; text: string 
   return (
     <div className={mine ? "ml-10 justify-self-end" : "mr-6"}>
       <p className="mb-1 text-xs font-semibold text-ink-2">{who}</p>
-      <div className={`rounded-2xl px-4 py-3 ${mine ? "bg-iris text-iris-ink" : "bg-paper-2"}`}>
+      <div className={`rounded-2xl px-4 py-3 ${mine ? "bg-accent text-accent-ink" : "bg-paper-2"}`}>
         <RichText text={text} />
       </div>
     </div>
@@ -152,7 +161,7 @@ export function RichText({ text }: { text: string }) {
     const bullet = /^[-*•]\s+/.test(line);
     const content = line.replace(/^[-*•]\s+/, "");
     const last = blocks[blocks.length - 1];
-    if (last && last.list === bullet && bullet) last.lines.push(content);
+    if (bullet && last?.list) last.lines.push(content);
     else blocks.push({ list: bullet, lines: [content] });
   }
   return (

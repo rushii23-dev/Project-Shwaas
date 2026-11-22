@@ -2,7 +2,17 @@
 import type { Activity, CommuteMode, CookingFuel, Heating, Profile, SensitiveGroup } from "./types";
 
 export const SENSITIVE: readonly SensitiveGroup[] = ["children", "elderly", "respiratory", "heart", "pregnant"];
-export const MODES: readonly CommuteMode[] = ["car_petrol", "car_diesel", "car_cng", "two_wheeler", "auto", "bus", "metro", "cycle_walk", "wfh"];
+export const MODES: readonly CommuteMode[] = [
+  "car_petrol",
+  "car_diesel",
+  "car_cng",
+  "two_wheeler",
+  "auto",
+  "bus",
+  "metro",
+  "cycle_walk",
+  "wfh",
+];
 export const FUELS: readonly CookingFuel[] = ["lpg", "png", "induction", "biomass", "kerosene", "coal"];
 export const HEATING: readonly Heating[] = ["none", "electric", "gas", "wood_coal"];
 export const ACTIVITIES: readonly Activity[] = ["morning_exercise", "school_run", "kids_play", "evening_walk"];
@@ -56,7 +66,15 @@ export function parseProfile(raw: unknown): Profile | null {
 
 /** Short deterministic hash (FNV-1a) of the profile, used in plan cache keys. */
 export function profileHash(p: Profile): string {
-  const s = JSON.stringify([p.sensitive.toSorted(), p.commute, p.cooking, p.heating, p.purifier, p.smokingIndoors, p.activities.toSorted()]);
+  const s = JSON.stringify([
+    p.sensitive.toSorted(),
+    p.commute,
+    p.cooking,
+    p.heating,
+    p.purifier,
+    p.smokingIndoors,
+    p.activities.toSorted(),
+  ]);
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);

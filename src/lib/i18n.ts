@@ -2,13 +2,38 @@
 import type { Lang } from "./types";
 
 const en = {
-  skip: "Skip to your plan",
+  skip: "Skip to content",
+  "nav.plan": "Plan my day",
+  "nav.world": "World air",
+  "nav.smog": "Smog guide",
+  "nav.about": "About",
+  "nav.menu": "Menu",
+  "nav.home": "Shwaas home page",
+  "nav.label": "Main",
+  "site.tagline": "A clean-air planner for families living through smog season.",
+  "site.photos": "Photography from Unsplash. Full credits on the About page.",
+  "site.notAdvice": "Air data from Open-Meteo (Copernicus CAMS). Shwaas offers guidance, not medical advice.",
+  "site.sources": "Sources and method",
+  "site.loading": "Loading…",
+  "error.page.title": "This page hit a problem.",
+  "error.page.body": "Try again, or reload. Your saved place and household are safe on this device.",
+  "error.page.reload": "Reload the page",
+  "notfound.title": "This page drifted off in the haze.",
+  "notfound.body": "The link may be old or mistyped. Everything Shwaas does starts from the home page.",
+  "notfound.cta": "Go to the home page",
+  "title.home": "Shwaas: get your family through smog season",
+  "title.plan": "Plan my day | Shwaas",
+  "title.world": "World air, live | Shwaas",
+  "title.smog": "Understanding winter smog | Shwaas",
+  "title.about": "About Shwaas",
+  "plan.bar.place": "Place",
+
   brand: "Shwaas",
   tagline: "Clean-air planning for families",
 
-  "welcome.title": "Plan your family's day around the smog.",
+  "welcome.title": "Where is your family breathing today?",
   "welcome.body":
-    "Shwaas reads the air forecast where you live and turns it into a simple plan: when to step out, how to keep the air at home clean, and which everyday swaps cut pollution the most.",
+    "Choose your city or neighbourhood. Shwaas reads its air forecast and builds your family's day around the hours that matter.",
   "welcome.useLocation": "Use my location",
   "welcome.locating": "Finding you…",
   "welcome.or": "Or search for your city",
@@ -79,6 +104,7 @@ const en = {
   "sky.station": "Nearest monitor, {name}: AQI {aqi}, {km} km away",
   "sky.updated": "Forecast updated {time}",
   "sky.stale": "Showing saved data while we refresh",
+  "sky.offline": "You're offline. Showing the last forecast saved on this device.",
   "sky.refresh": "Refresh",
 
   "band.good": "Good",
@@ -99,6 +125,8 @@ const en = {
   "plan.writing": "Gemini is writing a plan for your household…",
   "plan.regenerate": "Write a new plan",
   "plan.tomorrow": "Tomorrow",
+  "plan.dose": "Following this plan's timing, your family breathes about {n}% less smog outdoors than at your usual times.",
+  "plan.print": "Print today's plan",
   "plan.why.no_key": "Add a Gemini key in Settings to get a plan written for your household by AI.",
   "plan.why.bad_key": "The Gemini key was rejected, so this plan comes from the built-in planner. Check the key in Settings.",
   "plan.why.quota": "Gemini is busy right now, so this plan comes from the built-in planner.",
@@ -120,6 +148,10 @@ const en = {
   "chart.table": "Show the numbers",
   "chart.hour": "Hour",
 
+  "outlook.title": "The next few days",
+  "outlook.intro": "Average air during waking hours, so you can plan outings and work-from-home days ahead.",
+  "outlook.cleanest": "Clearest day: plan outings and errands",
+  "outlook.smoggiest": "Smoggiest day: a good one to work from home",
   "indoor.title": "Cleaner air at home",
   "indoor.cut": "Cuts indoor fine dust by {a}–{b}%",
   "indoor.cut.mask": "Filters {a}–{b}% of the fine dust you breathe",
@@ -145,6 +177,9 @@ const en = {
   "swaps.scope.home": "Home",
   "swaps.scope.community": "Neighbourhood",
   "swaps.total": "Together, these swaps save about {kg} kg of CO₂ a month and keep {g} g of fine dust out of your street's air.",
+  "swaps.totalMine": "Your pledges save about {kg} kg of CO₂ a month and keep {g} g of fine dust out of your street's air.",
+  "swaps.pledge": "I'll do this",
+  "swaps.pledgeHint": "Tick the changes you'll make to track your own impact. Pledges stay on this device.",
   "swaps.kg": "{n} kg",
   "swaps.g": "{n} g",
   "swaps.cut": "{n}% less",
@@ -213,13 +248,38 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const hi: Record<MessageKey, string> = {
-  skip: "सीधे अपनी योजना पर जाएँ",
+  skip: "सीधे सामग्री पर जाएँ",
+  "nav.plan": "मेरा दिन प्लान करें",
+  "nav.world": "दुनिया की हवा",
+  "nav.smog": "धुंध गाइड",
+  "nav.about": "परिचय",
+  "nav.menu": "मेनू",
+  "nav.home": "श्वास होम पेज",
+  "nav.label": "मुख्य",
+  "site.tagline": "धुंध के मौसम से गुज़रते परिवारों के लिए साफ़ हवा की योजना।",
+  "site.photos": "तस्वीरें Unsplash से। पूरा श्रेय परिचय पेज पर।",
+  "site.notAdvice": "हवा का डेटा Open-Meteo (Copernicus CAMS) से। श्वास मार्गदर्शन देता है, चिकित्सा सलाह नहीं।",
+  "site.sources": "स्रोत और तरीका",
+  "site.loading": "लोड हो रहा है…",
+  "error.page.title": "इस पेज में कोई दिक्कत आ गई।",
+  "error.page.body": "फिर कोशिश करें, या पेज रीलोड करें। आपकी जगह और घर की जानकारी इस डिवाइस पर सुरक्षित है।",
+  "error.page.reload": "पेज रीलोड करें",
+  "notfound.title": "यह पेज धुंध में कहीं खो गया।",
+  "notfound.body": "लिंक पुराना या गलत हो सकता है। श्वास की हर चीज़ होम पेज से शुरू होती है।",
+  "notfound.cta": "होम पेज पर जाएँ",
+  "title.home": "श्वास: धुंध के मौसम में अपने परिवार का साथ",
+  "title.plan": "मेरा दिन | श्वास",
+  "title.world": "दुनिया की हवा, लाइव | श्वास",
+  "title.smog": "सर्दियों की धुंध को समझें | श्वास",
+  "title.about": "श्वास के बारे में",
+  "plan.bar.place": "जगह",
+
   brand: "श्वास",
   tagline: "परिवारों के लिए साफ़ हवा की योजना",
 
-  "welcome.title": "धुंध के हिसाब से अपने परिवार का दिन तय करें।",
+  "welcome.title": "आज आपका परिवार कहाँ साँस ले रहा है?",
   "welcome.body":
-    "श्वास आपके इलाके की हवा का पूर्वानुमान पढ़कर एक आसान योजना बनाता है: कब बाहर निकलें, घर की हवा कैसे साफ़ रखें, और कौन से रोज़ के बदलाव प्रदूषण सबसे ज़्यादा घटाते हैं।",
+    "अपना शहर या इलाका चुनिए। श्वास वहाँ की हवा का पूर्वानुमान पढ़कर आपके परिवार का दिन उन घंटों के हिसाब से बनाता है जो मायने रखते हैं।",
   "welcome.useLocation": "मेरी लोकेशन इस्तेमाल करें",
   "welcome.locating": "आपको ढूँढ रहे हैं…",
   "welcome.or": "या अपना शहर खोजें",
@@ -290,6 +350,7 @@ const hi: Record<MessageKey, string> = {
   "sky.station": "पास का मॉनिटर, {name}: AQI {aqi}, {km} किमी दूर",
   "sky.updated": "पूर्वानुमान {time} पर अपडेट हुआ",
   "sky.stale": "ताज़ा करते समय सहेजा डेटा दिखा रहे हैं",
+  "sky.offline": "आप ऑफ़लाइन हैं। इस डिवाइस पर सहेजा आख़िरी पूर्वानुमान दिखा रहे हैं।",
   "sky.refresh": "ताज़ा करें",
 
   "band.good": "अच्छी",
@@ -310,6 +371,8 @@ const hi: Record<MessageKey, string> = {
   "plan.writing": "Gemini आपके घर के लिए योजना लिख रहा है…",
   "plan.regenerate": "नई योजना लिखें",
   "plan.tomorrow": "कल",
+  "plan.dose": "इस योजना के समय पर चलने से आपका परिवार अपने सामान्य समय की तुलना में बाहर लगभग {n}% कम धुंध साँस में लेगा।",
+  "plan.print": "आज की योजना प्रिंट करें",
   "plan.why.no_key": "AI से अपने घर के लिए योजना पाने के लिए सेटिंग्स में Gemini की जोड़ें।",
   "plan.why.bad_key": "Gemini की स्वीकार नहीं हुई, इसलिए यह योजना अंदरूनी प्लानर से है। सेटिंग्स में की जाँचें।",
   "plan.why.quota": "Gemini अभी व्यस्त है, इसलिए यह योजना अंदरूनी प्लानर से है।",
@@ -331,6 +394,10 @@ const hi: Record<MessageKey, string> = {
   "chart.table": "आँकड़े देखें",
   "chart.hour": "समय",
 
+  "outlook.title": "आने वाले कुछ दिन",
+  "outlook.intro": "जागने के घंटों की औसत हवा, ताकि आप बाहर जाने और घर से काम के दिन पहले से तय कर सकें।",
+  "outlook.cleanest": "सबसे साफ़ दिन: घूमने और काम निपटाने की योजना बनाएँ",
+  "outlook.smoggiest": "सबसे धुंधला दिन: घर से काम करने के लिए अच्छा",
   "indoor.title": "घर में साफ़ हवा",
   "indoor.cut": "घर की बारीक धूल {a}–{b}% घटाता है",
   "indoor.cut.mask": "साँस में जाने वाली बारीक धूल का {a}–{b}% रोकता है",
@@ -356,6 +423,9 @@ const hi: Record<MessageKey, string> = {
   "swaps.scope.home": "घर",
   "swaps.scope.community": "मोहल्ला",
   "swaps.total": "ये बदलाव मिलकर हर महीने लगभग {kg} किलो CO₂ बचाते हैं और आपकी गली की हवा से {g} ग्राम बारीक धूल दूर रखते हैं।",
+  "swaps.totalMine": "आपके संकल्प हर महीने लगभग {kg} किलो CO₂ बचाते हैं और आपकी गली की हवा से {g} ग्राम बारीक धूल दूर रखते हैं।",
+  "swaps.pledge": "मैं यह करूँगा/करूँगी",
+  "swaps.pledgeHint": "जो बदलाव आप करेंगे उन पर निशान लगाइए, ताकि अपना असर देख सकें। संकल्प इसी डिवाइस पर रहते हैं।",
   "swaps.kg": "{n} किलो",
   "swaps.g": "{n} ग्राम",
   "swaps.cut": "{n}% कम",
@@ -421,15 +491,16 @@ const hi: Record<MessageKey, string> = {
   loading: "हवा का पूर्वानुमान लोड हो रहा है…",
 };
 
-const DICT: Record<Lang, Record<MessageKey, string>> = { en, hi };
+/** Every UI string, per language. Exported for the translation-parity tests. */
+export const MESSAGES: Record<Lang, Record<MessageKey, string>> = { en, hi };
 
 export type Vars = Record<string, string | number>;
 export type Translate = (key: MessageKey, vars?: Vars) => string;
 
 export function translator(lang: Lang): Translate {
-  const d = DICT[lang];
+  const d = MESSAGES[lang];
   return (key, vars) => {
-    const s = d[key] ?? en[key];
+    const s = d[key];
     return vars ? s.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`)) : s;
   };
 }

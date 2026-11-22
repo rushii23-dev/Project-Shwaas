@@ -37,7 +37,9 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
   const [boxRef, W] = useWidth<HTMLDivElement>(640);
   const tickEvery = W < 480 ? 6 : 3;
   const data = hours.slice(0, 24);
-  if (data.length === 0) return null;
+  const firstHour = data[0];
+  const lastHour = data[data.length - 1];
+  if (!firstHour || !lastHour) return null;
 
   const max = Math.max(200, ...data.map((d) => d.aqi)) * 1.08;
   const plotW = W - PAD.l - PAD.r;
@@ -48,15 +50,15 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
 
   const idx = (h: HourPoint | undefined) => (h ? data.findIndex((d) => d.time === h.time) : -1);
   const windows = [
-    ins.best2h && { label: t("chart.best"), from: idx(ins.best2h.start), to: idx(ins.best2h.end), tone: "var(--iris)" },
+    ins.best2h && { label: t("chart.best"), from: idx(ins.best2h.start), to: idx(ins.best2h.end), tone: "var(--accent)" },
     ins.worst3h && { label: t("chart.worst"), from: idx(ins.worst3h.start), to: idx(ins.worst3h.end), tone: "var(--ink-2)" },
   ].filter((w): w is { label: string; from: number; to: number; tone: string } => !!w && w.from >= 0 && w.to >= 0);
 
   const minP = data.reduce((a, b) => (b.aqi < a.aqi ? b : a));
   const maxP = data.reduce((a, b) => (b.aqi > a.aqi ? b : a));
   const desc = t("chart.desc", {
-    from: fmtHour(data[0]!.hour, lang),
-    to: fmtHour(data[data.length - 1]!.hour, lang),
+    from: fmtHour(firstHour.hour, lang),
+    to: fmtHour(lastHour.hour, lang),
     min: minP.aqi,
     minAt: fmtHour(minP.hour, lang),
     max: maxP.aqi,
@@ -75,10 +77,26 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
       </figcaption>
 
       <div ref={boxRef} className="relative mt-4">
-        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block max-w-full" role="img" aria-labelledby={descId} onMouseLeave={() => setHover(null)}>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          width={W}
+          height={H}
+          className="block max-w-full"
+          role="img"
+          aria-labelledby={descId}
+          onMouseLeave={() => setHover(null)}
+        >
           {windows.map((w) => (
             <g key={w.label}>
-              <rect x={x(w.from)} y={PAD.t - 4} width={(w.to - w.from + 1) * bw} height={plotH + 4} fill={w.tone} opacity={0.1} rx={6} />
+              <rect
+                x={x(w.from)}
+                y={PAD.t - 4}
+                width={(w.to - w.from + 1) * bw}
+                height={plotH + 4}
+                fill={w.tone}
+                opacity={0.1}
+                rx={6}
+              />
               <text
                 x={x(w.to) + bw > W - 60 ? x(w.to + 1) - 2 : x(w.from) + 2}
                 textAnchor={x(w.to) + bw > W - 60 ? "end" : "start"}
@@ -110,6 +128,7 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
               <g key={d.time} onMouseEnter={() => setHover(i)}>
                 {/* Rounded data end, square at the baseline. */}
                 <path
+                  data-band-swatch
                   d={`M${bx},${base} V${top + r} Q${bx},${top} ${bx + r},${top} H${bx + bwid - r} Q${bx + bwid},${top} ${bx + bwid},${top + r} V${base} Z`}
                   fill={bandFor(d.aqi).color}
                   opacity={hover === null || hover === i ? 1 : 0.55}
@@ -145,9 +164,14 @@ export function ForecastChart({ hours, ins }: { hours: HourPoint[]; ins: DayInsi
       </div>
 
       <details className="mt-3">
-        <summary className="cursor-pointer font-semibold text-iris">{t("chart.table")}</summary>
+        <summary className="cursor-pointer font-semibold text-accent-text">{t("chart.table")}</summary>
         {/* Focusable so keyboard users can scroll the table. */}
-        <div tabIndex={0} role="region" aria-label={t("chart.table")} className="mt-2 max-h-72 overflow-auto rounded-2xl border border-line">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label={t("chart.table")}
+          className="mt-2 max-h-72 overflow-auto rounded-2xl border border-line"
+        >
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-paper-2">
               <tr>

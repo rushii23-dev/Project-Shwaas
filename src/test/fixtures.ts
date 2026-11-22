@@ -11,15 +11,46 @@ export const DELHI: Place = { name: "Delhi", region: "Delhi, India", lat: 28.613
  * cleaner early afternoon. 24 hourly PM2.5 values.
  */
 export const WINTER_PM25 = [
-  70, 85, 110, 140, 160, 170, 165, 150, 140, 130, 120, 115, // 15:00 → 02:00
-  110, 115, 130, 150, 175, 180, 160, 120, 90, 70, 55, 50, //   03:00 → 14:00
+  70,
+  85,
+  110,
+  140,
+  160,
+  170,
+  165,
+  150,
+  140,
+  130,
+  120,
+  115, // 15:00 → 02:00
+  110,
+  115,
+  130,
+  150,
+  175,
+  180,
+  160,
+  120,
+  90,
+  70,
+  55,
+  50, //   03:00 → 14:00
 ];
 
 export function makeHours(pm25s = WINTER_PM25, startHour = 15, date = "2026-11-22"): HourPoint[] {
+  const [y = 2026, m = 11, d = 22] = date.split("-").map(Number);
   return pm25s.map((pm25, i) => {
     const h = (startHour + i) % 24;
-    const day = startHour + i >= 24 ? "2026-11-23" : date;
-    return { time: `${day}T${String(h).padStart(2, "0")}:00`, hour: h, aqi: pm25ToAqi(pm25), pm25, pm10: pm25 * 1.4, windKmh: 4, blhM: h < 8 || h > 19 ? 120 : 600 };
+    const day = new Date(Date.UTC(y, m - 1, d + Math.floor((startHour + i) / 24))).toISOString().slice(0, 10);
+    return {
+      time: `${day}T${String(h).padStart(2, "0")}:00`,
+      hour: h,
+      aqi: pm25ToAqi(pm25),
+      pm25,
+      pm10: pm25 * 1.4,
+      windKmh: 4,
+      blhM: h < 8 || h > 19 ? 120 : 600,
+    };
   });
 }
 
@@ -60,7 +91,11 @@ export function openMeteoWeather(): OpenMeteoWeather {
   const hours = makeHours();
   return {
     current: { temperature_2m: 23.7, relative_humidity_2m: 49, wind_speed_10m: 3.1 },
-    hourly: { time: hours.map((h) => h.time), wind_speed_10m: hours.map(() => 4), boundary_layer_height: hours.map((h) => h.blhM ?? 500) },
+    hourly: {
+      time: hours.map((h) => h.time),
+      wind_speed_10m: hours.map(() => 4),
+      boundary_layer_height: hours.map((h) => h.blhM ?? 500),
+    },
   };
 }
 
@@ -69,10 +104,14 @@ export const json = (body: unknown, status = 200) =>
 
 type Route = [RegExp, (url: string, init?: RequestInit) => Response | Promise<Response>];
 
+/** The URL a fetch call was made with, whatever form it took. */
+export const urlOf = (input: RequestInfo | URL): string =>
+  input instanceof Request ? input.url : input instanceof URL ? input.href : input;
+
 /** Stub global fetch with URL-pattern routes. Unmatched requests fail loudly. */
 export function mockFetch(routes: Route[]) {
   const fn = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input instanceof Request ? input.url : input);
+    const url = urlOf(input);
     const hit = routes.find(([re]) => re.test(url));
     if (!hit) throw new Error(`Unmocked fetch: ${url}`);
     return hit[1](url, init);
@@ -89,9 +128,15 @@ export function geminiStream(chunks: string[]): Response {
   const enc = new TextEncoder();
   const body = new ReadableStream<Uint8Array>({
     start(c) {
-      for (const t of chunks) c.enqueue(enc.encode(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: t }] } }] })}\r\n\r\n`));
+      for (const t of chunks)
+        c.enqueue(enc.encode(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: t }] } }] })}\r\n\r\n`));
       c.close();
     },
   });
   return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+}
+
+/** Open-Meteo multi-location payload for the world board: AQI falls with list order. */
+export function worldAir() {
+  return Array.from({ length: 14 }, (_, i) => ({ current: { us_aqi: 230 - i * 12, pm2_5: 80 - i * 5 } }));
 }

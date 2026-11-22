@@ -19,3 +19,6 @@ coverage/
 # Internal notes / local-only files (not for public repo)
 HANDOFF.md
 DESIGN_PROMPT.md
+
+# Vercel project link (local)
+.vercel

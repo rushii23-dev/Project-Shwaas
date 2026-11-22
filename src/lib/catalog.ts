@@ -6,9 +6,8 @@
  * when it applies, so a family with an LPG stove never hears "switch to LPG".
  */
 import { burningAvoided, commuteSwitch, idlingSavings, type SwapImpact, SOURCES } from "./impact";
-import type { Lang, Profile } from "./types";
+import type { Bilingual, Profile } from "./types";
 
-export type Bilingual = Record<Lang, string>;
 type SourceId = (typeof SOURCES)[number]["id"];
 
 export interface IndoorHack {
@@ -312,3 +311,34 @@ export const SWAPS_BY_ID = byId(SWAPS);
 
 export const applicableIndoor = (p: Profile) => INDOOR.filter((h) => h.applies(p));
 export const applicableSwaps = (p: Profile) => SWAPS.filter((s) => s.applies(p));
+
+/* ---------------------------------------------------------- totals */
+
+/** Commute changes overlap (you can't both take the metro and carpool). */
+const OVERLAPPING_COMMUTE = new Set(["commute_metro", "commute_bus", "carpool", "wfh_bad_days", "engine_off"]);
+const WEEKS_PER_MONTH = 4.33;
+
+export interface MonthlyImpact {
+  co2Kg: number;
+  pmG: number;
+}
+
+/**
+ * Monthly CO₂ and PM2.5 saved by a set of swaps for this household. Of the
+ * overlapping commute changes only the single biggest counts, never their sum,
+ * so the total is never double-counted.
+ */
+export function monthlyImpact(ids: readonly string[], p: Profile): MonthlyImpact {
+  const impacts = [...new Set(ids)].flatMap((id) => {
+    const swap = SWAPS_BY_ID.get(id);
+    return swap ? [{ id, impact: swap.impact(p) }] : [];
+  });
+  const commute = impacts.filter((x) => OVERLAPPING_COMMUTE.has(x.id));
+  const bestCommute = commute.reduce<(typeof commute)[number] | null>(
+    (best, x) => (!best || (x.impact.co2KgWeek ?? 0) > (best.impact.co2KgWeek ?? 0) ? x : best),
+    null,
+  );
+  const counted = impacts.filter((x) => !OVERLAPPING_COMMUTE.has(x.id) || x === bestCommute);
+  const sum = (f: (i: SwapImpact) => number | undefined) => counted.reduce((s, x) => s + (f(x.impact) ?? 0), 0) * WEEKS_PER_MONTH;
+  return { co2Kg: sum((i) => i.co2KgWeek), pmG: sum((i) => i.pmGWeek) };
+}

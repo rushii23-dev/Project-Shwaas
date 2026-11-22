@@ -1,4 +1,6 @@
-import { SWAPS_BY_ID } from "../lib/catalog";
+import { useId } from "react";
+import { usePledges } from "../hooks/usePledges";
+import { monthlyImpact, SWAPS_BY_ID } from "../lib/catalog";
 import { fmtNumber } from "../lib/format";
 import type { MessageKey } from "../lib/i18n";
 import type { SwapImpact } from "../lib/impact";
@@ -6,23 +8,21 @@ import type { Plan, Profile } from "../lib/types";
 import { useApp } from "../state/AppState";
 
 /**
- * The impact ledger: every recommended swap with its computed weekly effect.
+ * The impact ledger: every recommended swap with its computed weekly effect,
+ * and a pledge box per row so a family can track the changes it commits to.
  * A real table, because the content is rows × measures.
  */
 export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: Profile }) {
   const { t, lang } = useApp();
+  const { pledged, toggle } = usePledges();
+  const idBase = useId();
   const rows = picks.flatMap((p) => {
     const swap = SWAPS_BY_ID.get(p.id);
     return swap ? [{ swap, reason: p.reason, impact: swap.impact(profile) }] : [];
   });
 
-  // Commute changes overlap (you can't both take the metro and carpool), so the
-  // total counts only the single biggest one, never their sum.
-  const commuteIds = new Set(["commute_metro", "commute_bus", "carpool", "wfh_bad_days", "engine_off"]);
-  const bestCommute = rows.filter((r) => commuteIds.has(r.swap.id)).sort((a, b) => (b.impact.co2KgWeek ?? 0) - (a.impact.co2KgWeek ?? 0))[0];
-  const counted = rows.filter((r) => !commuteIds.has(r.swap.id) || r === bestCommute);
-  const kgMonth = counted.reduce((s, r) => s + (r.impact.co2KgWeek ?? 0), 0) * 4.3;
-  const gMonth = counted.reduce((s, r) => s + (r.impact.pmGWeek ?? 0), 0) * 4.3;
+  const mine = rows.filter((r) => pledged.has(r.swap.id)).map((r) => r.swap.id);
+  const total = monthlyImpact(mine.length > 0 ? mine : rows.map((r) => r.swap.id), profile);
 
   const cell = (v: number | undefined, key: MessageKey, digits = 1) =>
     v ? t(key, { n: fmtNumber(v, lang, digits) }) : <span className="text-ink-2">{t("swaps.na")}</span>;
@@ -41,7 +41,9 @@ export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: 
         {t("swaps.title")}
       </h2>
       <p className="mt-2 text-ink-2">
-        {profile.commute.mode === "wfh" ? t("swaps.introNoCommute") : t("swaps.intro", { km: profile.commute.km, d: profile.commute.daysPerWeek })}
+        {profile.commute.mode === "wfh"
+          ? t("swaps.introNoCommute")
+          : t("swaps.intro", { km: profile.commute.km, d: profile.commute.daysPerWeek })}
       </p>
 
       {/* Focusable so keyboard users can scroll the table sideways on small screens. */}
@@ -69,8 +71,22 @@ export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: 
                 <th scope="row" className="py-4 pr-4 font-normal">
                   <span className="block text-lg font-semibold leading-snug">{swap.title[lang]}</span>
                   <span className="mt-1 block max-w-[46ch] text-ink-2">{reason}</span>
-                  <span className="mt-2 inline-block rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-ink-2">
-                    {t(`swaps.scope.${swap.scope}` as MessageKey)}
+                  <span className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="inline-block rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-ink-2">
+                      {t(`swaps.scope.${swap.scope}` as MessageKey)}
+                    </span>
+                    <label htmlFor={`${idBase}-${swap.id}`} className="chip min-h-9 py-1 text-sm font-semibold print:hidden">
+                      <input
+                        id={`${idBase}-${swap.id}`}
+                        type="checkbox"
+                        checked={pledged.has(swap.id)}
+                        onChange={() => {
+                          toggle(swap.id);
+                        }}
+                      />
+                      {t("swaps.pledge")}
+                      <span className="sr-only">: {swap.title[lang]}</span>
+                    </label>
                   </span>
                 </th>
                 <td className="px-3 py-4 text-right font-semibold tabular-nums">{cell(impact.co2KgWeek, "swaps.kg")}</td>
@@ -82,11 +98,17 @@ export function SwapLedger({ picks, profile }: { picks: Plan["swaps"]; profile: 
         </table>
       </div>
 
-      {kgMonth >= 0.5 && (
-        <p className="mt-5 max-w-[60ch] rounded-2xl bg-iris-soft p-4 text-lg font-medium leading-snug">
-          {t("swaps.total", { kg: fmtNumber(kgMonth, lang, 0), g: fmtNumber(gMonth, lang, 0) })}
-        </p>
-      )}
+      <div aria-live="polite" className="mt-5 max-w-[60ch] rounded-2xl bg-accent-soft p-4">
+        {total.co2Kg >= 0.5 || total.pmG >= 0.5 ? (
+          <p className="text-lg font-medium leading-snug">
+            {t(mine.length > 0 ? "swaps.totalMine" : "swaps.total", {
+              kg: fmtNumber(total.co2Kg, lang, 0),
+              g: fmtNumber(total.pmG, lang, 0),
+            })}
+          </p>
+        ) : null}
+        {mine.length === 0 && <p className="mt-1 text-ink-2">{t("swaps.pledgeHint")}</p>}
+      </div>
     </section>
   );
 }

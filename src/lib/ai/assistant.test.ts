@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { geminiJson, geminiStream, json, makeProfile, makeSnap, mockFetch } from "../../test/fixtures";
+import { geminiJson, geminiStream, json, makeProfile, makeSnap, mockFetch, urlOf } from "../../test/fixtures";
 import { computeInsights } from "../insights";
 import { askAssistant, buildContext, getPlan, validatePlan } from "./assistant";
-import { readSse, setUserKey, takeToken } from "./gemini";
+import { readSse, setUserKey, takeToken, textOf } from "./gemini";
 
 const snap = makeSnap();
 const profile = makeProfile({ sensitive: ["children"], commute: { mode: "car_petrol", km: 8, daysPerWeek: 5 } });
@@ -68,7 +68,8 @@ describe("buildContext", () => {
       smokingIndoors: false,
       dailyActivities: ["morning_exercise"],
     });
-    expect(ctx.cleanestWindow).toEqual({ from: "1 pm", to: "3 pm", aqi: expect.any(Number) });
+    expect(ctx.cleanestWindow).toMatchObject({ from: "1 pm", to: "3 pm" });
+    expect(typeof ctx.cleanestWindow?.aqi).toBe("number");
   });
 });
 
@@ -81,7 +82,7 @@ describe("getPlan", () => {
     expect(plan.source).toBe("ai");
     expect(plan.headline).toBe("Keep the kids in until lunch.");
     const [url, init] = fetch.mock.calls[0]!;
-    expect(String(url)).not.toContain("test-key");
+    expect(urlOf(url)).not.toContain("test-key");
     expect((init?.headers as Record<string, string>)["x-goog-api-key"]).toBe("test-key-abcdefghijklmnopqrstuvwxyz");
   });
 
@@ -118,7 +119,9 @@ describe("getPlan", () => {
     setUserKey("users-own-key-abcdefghijklmnopqrstuvwxyz");
     const fetch = mockFetch([[/generativelanguage/, () => geminiJson(goodPlan)]]);
     await getPlan(snap, ins, profile, "en");
-    expect((fetch.mock.calls[0]![1]?.headers as Record<string, string>)["x-goog-api-key"]).toBe("users-own-key-abcdefghijklmnopqrstuvwxyz");
+    expect((fetch.mock.calls[0]![1]?.headers as Record<string, string>)["x-goog-api-key"]).toBe(
+      "users-own-key-abcdefghijklmnopqrstuvwxyz",
+    );
   });
 });
 
@@ -142,7 +145,7 @@ describe("streaming chat", () => {
       },
     });
     const texts: string[] = [];
-    for await (const ev of readSse(body)) texts.push(ev.candidates?.[0]?.content?.parts?.[0]?.text ?? "");
+    for await (const ev of readSse(body)) texts.push(textOf(ev));
     expect(texts).toEqual(["Hel", "lo"]);
   });
 
@@ -150,7 +153,14 @@ describe("streaming chat", () => {
     vi.stubEnv("VITE_GEMINI_API_KEY", "test-key-abcdefghijklmnopqrstuvwxyz");
     mockFetch([[/streamGenerateContent/, () => geminiStream(["Yes, ", "after 1 pm."])]]);
     const seen: string[] = [];
-    const answer = await askAssistant({ snap, ins, profile, lang: "en", messages: [{ role: "user", text: "Can they play?" }], onText: (t) => seen.push(t) });
+    const answer = await askAssistant({
+      snap,
+      ins,
+      profile,
+      lang: "en",
+      messages: [{ role: "user", text: "Can they play?" }],
+      onText: (t) => seen.push(t),
+    });
     expect(answer).toBe("Yes, after 1 pm.");
     expect(seen).toEqual(["Yes, ", "Yes, after 1 pm."]);
   });

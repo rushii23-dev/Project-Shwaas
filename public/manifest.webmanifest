@@ -4,7 +4,7 @@
   "description": "Plan your family's day around winter smog.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#e7ebef",
-  "theme_color": "#4a43d1",
+  "background_color": "#0f131a",
+  "theme_color": "#0f131a",
   "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

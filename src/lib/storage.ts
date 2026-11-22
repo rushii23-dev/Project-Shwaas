@@ -1,13 +1,13 @@
 /**
  * localStorage wrapper. Storage can be unavailable (private mode, quota, blocked
- * cookies) and its contents are user-editable, so every read is guarded and
- * every structured value is validated by the caller before use.
+ * cookies) and its contents are user-editable, so reads return `unknown`: every
+ * caller must validate before use (see guards.ts, parseProfile, parsePlace).
  */
 
-export function readJson<T>(key: string): T | null {
+export function readJson(key: string): unknown {
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
+    return raw ? (JSON.parse(raw) as unknown) : null;
   } catch {
     return null;
   }
@@ -37,7 +37,9 @@ export function clearAll(): void {
       const k = window.localStorage.key(i);
       if (k?.startsWith("shwaas:")) keys.push(k);
     }
-    keys.forEach((k) => window.localStorage.removeItem(k));
+    keys.forEach((k) => {
+      window.localStorage.removeItem(k);
+    });
   } catch {
     /* ignore */
   }

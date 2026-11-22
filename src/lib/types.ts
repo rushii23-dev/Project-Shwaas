@@ -2,6 +2,9 @@
 
 export type Lang = "en" | "hi";
 
+/** Copy that exists in every supported language. */
+export type Bilingual = Record<Lang, string>;
+
 export interface Coords {
   lat: number;
   lon: number;
@@ -66,15 +69,7 @@ export interface AirSnapshot {
 export type SensitiveGroup = "children" | "elderly" | "respiratory" | "heart" | "pregnant";
 
 export type CommuteMode =
-  | "car_petrol"
-  | "car_diesel"
-  | "car_cng"
-  | "two_wheeler"
-  | "auto"
-  | "bus"
-  | "metro"
-  | "cycle_walk"
-  | "wfh";
+  "car_petrol" | "car_diesel" | "car_cng" | "two_wheeler" | "auto" | "bus" | "metro" | "cycle_walk" | "wfh";
 
 export type CookingFuel = "lpg" | "png" | "induction" | "biomass" | "kerosene" | "coal";
 export type Heating = "none" | "electric" | "gas" | "wood_coal";
@@ -105,8 +100,9 @@ export interface RoutineItem {
   impact?: string;
 }
 
-export interface Pick<Id extends string> {
-  id: Id;
+/** A catalogue item chosen for this household, with the reason it was chosen. */
+export interface PlanPick {
+  id: string;
   /** Why this matters for this household, in one or two sentences. */
   reason: string;
 }
@@ -117,6 +113,6 @@ export interface Plan {
   headline: string;
   why: string;
   routine: RoutineItem[];
-  indoor: Pick<string>[];
-  swaps: Pick<string>[];
+  indoor: PlanPick[];
+  swaps: PlanPick[];
 }

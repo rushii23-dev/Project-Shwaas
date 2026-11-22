@@ -1,0 +1,12 @@
+# Never upload local secrets or internal notes; Vercel builds from source.
+.env
+.env.*
+!.env.example
+HANDOFF.md
+DESIGN_PROMPT.md
+node_modules
+dist
+coverage
+demo
+design_handoff
+.claude

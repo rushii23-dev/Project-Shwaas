@@ -10,29 +10,41 @@
  *  - Model output is treated as untrusted data: parsed, validated against the
  *    catalogue and rendered only as text.
  */
+import { errorDetail, fetchJson, HttpError, isAbort } from "../api/http";
+import { isRecord, isStr } from "../guards";
 import { readJson, removeKey, writeJson } from "../storage";
-import { fetchJson, HttpError } from "../api/http";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-/** Read at call time so tests (and hot reload) see the current value. */
-const envKey = () => (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() || undefined;
-export const MODEL = (import.meta.env.VITE_GEMINI_MODEL as string | undefined)?.trim() || "gemini-2.5-flash";
 const USER_KEY = "shwaas:gemini-key";
+const MIN_KEY_LENGTH = 20;
 
-export function getApiKey(): string | undefined {
-  const own = readJson<string>(USER_KEY);
-  return (typeof own === "string" && own.length > 20 ? own : undefined) ?? envKey();
+/** "" and whitespace count as unset. */
+const nonEmpty = (s: unknown): string | undefined => (isStr(s) && s.trim() ? s.trim() : undefined);
+
+/** Read at call time so tests (and hot reload) see the current value. */
+const envKey = (): string | undefined => nonEmpty(import.meta.env.VITE_GEMINI_API_KEY);
+export const MODEL = nonEmpty(import.meta.env.VITE_GEMINI_MODEL) ?? "gemini-2.5-flash";
+
+function userKey(): string | undefined {
+  const own = nonEmpty(readJson(USER_KEY));
+  return own && own.length >= MIN_KEY_LENGTH ? own : undefined;
 }
-export const hasBundledKey = () => Boolean(envKey());
-export const hasUserKey = () => typeof readJson<string>(USER_KEY) === "string";
+
+export const getApiKey = (): string | undefined => userKey() ?? envKey();
+export const hasBundledKey = (): boolean => envKey() !== undefined;
+export const hasUserKey = (): boolean => userKey() !== undefined;
+
 export function setUserKey(key: string | null): void {
-  if (key && key.trim()) writeJson(USER_KEY, key.trim());
+  const k = nonEmpty(key);
+  if (k) writeJson(USER_KEY, k);
   else removeKey(USER_KEY);
 }
 
+export type AiFailure = "no_key" | "rate_limited" | "quota" | "bad_key" | "network" | "bad_response";
+
 export class AiUnavailableError extends Error {
-  readonly reason: "no_key" | "rate_limited" | "quota" | "bad_key" | "network" | "bad_response";
-  constructor(reason: AiUnavailableError["reason"], message?: string) {
+  readonly reason: AiFailure;
+  constructor(reason: AiFailure, message?: string) {
     super(message ?? reason);
     this.name = "AiUnavailableError";
     this.reason = reason;
@@ -45,13 +57,17 @@ const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 8;
 const calls: number[] = [];
 
+/** Sliding-window limiter: at most 8 model calls per minute from this tab. */
 export function takeToken(now = Date.now()): boolean {
-  while (calls.length && now - calls[0]! > WINDOW_MS) calls.shift();
+  while (calls.length > 0 && now - (calls[0] ?? now) > WINDOW_MS) calls.shift();
   if (calls.length >= MAX_PER_WINDOW) return false;
   calls.push(now);
   return true;
 }
-export const resetRateLimit = () => void (calls.length = 0);
+
+export function resetRateLimit(): void {
+  calls.length = 0;
+}
 
 /* -------------------------------------------------------------- requests */
 
@@ -60,9 +76,18 @@ export interface Content {
   parts: { text: string }[];
 }
 
-interface GenerateResponse {
-  candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-  promptFeedback?: { blockReason?: string };
+/** Concatenate the text parts of the first candidate in a (untrusted) Gemini response. */
+export function textOf(res: unknown): string {
+  if (!isRecord(res) || !Array.isArray(res.candidates)) return "";
+  const first: unknown = res.candidates[0];
+  if (!isRecord(first) || !isRecord(first.content) || !Array.isArray(first.content.parts)) return "";
+  return (first.content.parts as unknown[]).map((p) => (isRecord(p) && isStr(p.text) ? p.text : "")).join("");
+}
+
+function blockReason(res: unknown): string | undefined {
+  return isRecord(res) && isRecord(res.promptFeedback) && isStr(res.promptFeedback.blockReason)
+    ? res.promptFeedback.blockReason
+    : undefined;
 }
 
 function prepare(): string {
@@ -72,16 +97,17 @@ function prepare(): string {
   return key;
 }
 
-function translate(err: unknown): never {
-  if (err instanceof AiUnavailableError) throw err;
-  if (err instanceof DOMException && err.name === "AbortError") throw err;
+/** Map transport errors to the few failure reasons the UI explains. Aborts pass through untouched. */
+export function translate(err: unknown): never {
+  if (err instanceof AiUnavailableError || isAbort(err)) throw err;
   if (err instanceof HttpError) {
     if (err.status === 429) throw new AiUnavailableError("quota", err.message);
-    if (err.status === 401 || err.status === 403 || (err.status === 400 && /api key/i.test(err.message)))
+    if (err.status === 401 || err.status === 403 || (err.status === 400 && /api key/i.test(err.message))) {
       throw new AiUnavailableError("bad_key", err.message);
+    }
     if (err.status === 400) throw new AiUnavailableError("bad_response", err.message);
   }
-  throw new AiUnavailableError("network", err instanceof Error ? err.message : String(err));
+  throw new AiUnavailableError("network", err instanceof Error ? err.message : "unknown error");
 }
 
 /** Flash models answer fastest with thinking off; other models keep their default. */
@@ -89,18 +115,18 @@ const thinking = MODEL.includes("flash") ? { thinkingConfig: { thinkingBudget: 0
 
 const headers = (key: string) => ({ "content-type": "application/json", "x-goog-api-key": key });
 
-/** One-shot JSON generation constrained by a response schema. */
-export async function generateJson<T>(opts: {
+/** One-shot JSON generation constrained by a response schema. Returns parsed but unvalidated JSON. */
+export async function generateJson(opts: {
   system: string;
   prompt: string;
   schema: object;
   temperature?: number;
-  signal?: AbortSignal;
-}): Promise<T> {
+  signal?: AbortSignal | undefined;
+}): Promise<unknown> {
   const key = prepare();
-  let res: GenerateResponse;
+  let res: unknown;
   try {
-    res = await fetchJson<GenerateResponse>(`${BASE}/${MODEL}:generateContent`, {
+    res = await fetchJson(`${BASE}/${MODEL}:generateContent`, {
       signal: opts.signal,
       timeoutMs: 45_000,
       init: {
@@ -121,17 +147,17 @@ export async function generateJson<T>(opts: {
   } catch (err) {
     translate(err);
   }
-  const text = res.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-  if (!text) throw new AiUnavailableError("bad_response", res.promptFeedback?.blockReason ?? "empty");
+  const text = textOf(res);
+  if (!text) throw new AiUnavailableError("bad_response", blockReason(res) ?? "empty");
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(text) as unknown;
   } catch {
     throw new AiUnavailableError("bad_response", "invalid JSON");
   }
 }
 
 /** Parse Server-Sent Events from a fetch body and yield each JSON payload. */
-export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator<GenerateResponse> {
+export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -139,8 +165,8 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator
     const { value, done } = await reader.read();
     if (done) break;
     buf += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-    let idx: number;
-    while ((idx = buf.indexOf("\n\n")) !== -1) {
+    let idx = buf.indexOf("\n\n");
+    while (idx !== -1) {
       const event = buf.slice(0, idx);
       buf = buf.slice(idx + 2);
       const data = event
@@ -150,11 +176,12 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator
         .join("");
       if (data) {
         try {
-          yield JSON.parse(data) as GenerateResponse;
+          yield JSON.parse(data) as unknown;
         } catch {
           /* skip malformed chunk */
         }
       }
+      idx = buf.indexOf("\n\n");
     }
   }
 }
@@ -163,7 +190,7 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator
 export async function streamChat(opts: {
   system: string;
   history: Content[];
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
   onText: (full: string) => void;
 }): Promise<string> {
   const key = prepare();
@@ -183,11 +210,12 @@ export async function streamChat(opts: {
   } catch (err) {
     translate(err);
   }
-  if (!res.ok || !res.body) translate(new HttpError(res.status, res.statusText));
+  if (!res.ok) translate(new HttpError(res.status, await errorDetail(res)));
+  if (!res.body) throw new AiUnavailableError("bad_response", "no body");
 
   let full = "";
   for await (const chunk of readSse(res.body)) {
-    const piece = chunk.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+    const piece = textOf(chunk);
     if (piece) {
       full += piece;
       opts.onText(full);

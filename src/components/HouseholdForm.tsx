@@ -8,7 +8,17 @@ import { useApp } from "../state/AppState";
  * Household questions as real fieldsets of checkboxes and radios, so keyboard
  * and screen-reader users get native behaviour. Everything stays on device.
  */
-export function HouseholdForm({ initial, onSave, onSkip, submitLabel }: { initial: Profile | null; onSave: (p: Profile) => void; onSkip?: () => void; submitLabel: string }) {
+export function HouseholdForm({
+  initial,
+  onSave,
+  onSkip,
+  submitLabel,
+}: {
+  initial: Profile | null;
+  onSave: (p: Profile) => void;
+  onSkip?: () => void;
+  submitLabel: string;
+}) {
   const { t } = useApp();
   const [p, setP] = useState<Profile>(initial ?? DEFAULT_PROFILE);
   const kmId = useId();
@@ -48,7 +58,13 @@ export function HouseholdForm({ initial, onSave, onSkip, submitLabel }: { initia
 
       <Group legend={t("household.commute")}>
         {MODES.map((m) => (
-          <Chip key={m} type="radio" name="mode" checked={p.commute.mode === m} onChange={() => setP({ ...p, commute: { ...p.commute, mode: m } })}>
+          <Chip
+            key={m}
+            type="radio"
+            name="mode"
+            checked={p.commute.mode === m}
+            onChange={() => setP({ ...p, commute: { ...p.commute, mode: m } })}
+          >
             {t(`mode.${m}` as MessageKey)}
           </Chip>
         ))}
@@ -137,7 +153,19 @@ function Group({ legend, children }: { legend: string; children: ReactNode }) {
   );
 }
 
-function Chip({ type, name, checked, onChange, children }: { type: "checkbox" | "radio"; name?: string; checked: boolean; onChange: () => void; children: ReactNode }) {
+function Chip({
+  type,
+  name,
+  checked,
+  onChange,
+  children,
+}: {
+  type: "checkbox" | "radio";
+  name?: string;
+  checked: boolean;
+  onChange: () => void;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <label className="chip" htmlFor={id}>

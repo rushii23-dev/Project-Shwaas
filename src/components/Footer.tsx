@@ -11,7 +11,7 @@ export function Footer() {
       </div>
       <p className="max-w-[70ch]">{t("footer.privacy")}</p>
       <details>
-        <summary className="cursor-pointer font-semibold text-iris">{t("footer.sources")}</summary>
+        <summary className="cursor-pointer font-semibold text-accent-text">{t("footer.sources")}</summary>
         <ul className="mt-2 grid list-disc gap-1 pl-5">
           <li>Open-Meteo Air Quality API (CAMS global atmospheric composition forecasts)</li>
           {SOURCES.map((s) => (

@@ -10,10 +10,11 @@ export function SkyBackdrop({ aqi, children, className = "" }: { aqi: number; ch
   const sky = skyFor(aqi);
   return (
     <div
+      data-sky
       className={`relative isolate overflow-hidden ${className}`}
       style={{ background: `linear-gradient(180deg, ${sky.top} 0%, ${sky.horizon} 78%)`, color: sky.ink }}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+      <div aria-hidden="true" data-sky-art className="pointer-events-none absolute inset-0 -z-10">
         <Skyline opacity={sky.skyline} tint={sky.severity} />
         <div
           className="haze-settle absolute inset-x-[-10%] bottom-[-5%] h-[85%]"

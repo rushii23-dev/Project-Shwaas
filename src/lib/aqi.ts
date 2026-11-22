@@ -24,18 +24,20 @@ export interface Band {
   ink: string;
 }
 
+const HAZARDOUS: Band = { id: "hazardous", min: 301, max: Infinity, color: "#6b1d2a", ink: "#ffffff" };
+
 export const BANDS: readonly Band[] = [
   { id: "good", min: 0, max: 50, color: "#2f9e5f", ink: "#04210f" },
   { id: "moderate", min: 51, max: 100, color: "#d1a91c", ink: "#241c00" },
   { id: "sensitive", min: 101, max: 150, color: "#e06a26", ink: "#1f0b00" },
   { id: "unhealthy", min: 151, max: 200, color: "#cf3b3b", ink: "#ffffff" },
   { id: "very_unhealthy", min: 201, max: 300, color: "#8a3a96", ink: "#ffffff" },
-  { id: "hazardous", min: 301, max: Infinity, color: "#6b1d2a", ink: "#ffffff" },
+  HAZARDOUS,
 ];
 
 export function bandFor(aqi: number): Band {
   const v = Math.max(0, Math.round(aqi));
-  return BANDS.find((b) => v <= b.max) ?? BANDS[BANDS.length - 1]!;
+  return BANDS.find((b) => v <= b.max) ?? HAZARDOUS;
 }
 
 /** EPA 2024 PM2.5 breakpoints: [concLow, concHigh, aqiLow, aqiHigh]. */
@@ -85,5 +87,5 @@ export function outdoorRisk(aqi: number, sensitive: readonly SensitiveGroup[]): 
   const base = aqi <= 50 ? 0 : aqi <= 150 ? 1 : aqi <= 200 ? 2 : 3;
   const shift = sensitive.length > 0 && aqi > 100 ? 1 : 0;
   const level = Math.min(3, base + shift);
-  return (["ok", "caution", "limit", "avoid"] as const)[level]!;
+  return level === 0 ? "ok" : level === 1 ? "caution" : level === 2 ? "limit" : "avoid";
 }

@@ -1,37 +1,70 @@
 @import "tailwindcss";
 
 /*
- * Shwaas tokens. Cool "haze" neutrals instead of paper-cream; one iris accent
- * for actions; AQI band colours are reserved for data.
+ * Tiro's packaged CSS has no unicode-range, so browsers would fetch it for any
+ * glyph Newsreader lacks. Declared here with a Devanagari range, it downloads
+ * only when Hindi text is on screen.
+ */
+@font-face {
+  font-family: "Tiro Devanagari Hindi";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../node_modules/@fontsource/tiro-devanagari-hindi/files/tiro-devanagari-hindi-devanagari-400-normal.woff2")
+    format("woff2");
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+}
+
+/*
+ * Shwaas design tokens — "sodium night".
+ *
+ * Delhi's winter smog has a colour: the amber of sodium street lamps glowing
+ * through haze. That amber is the single accent. Everything else is cool
+ * slate and mist, so photographs and AQI data carry the colour.
+ *
+ * Type: Newsreader (editorial serif, optical sizes) for display, Schibsted
+ * Grotesk (a newspaper grotesque) for text. Hindi falls back to Tiro
+ * Devanagari Hindi / Anek Devanagari, which pair with each.
  */
 :root {
-  --haze: #e7ebef;
-  --paper: #f6f8fa;
-  --paper-2: #edf1f4;
-  --ink: #1c2533;
-  --ink-2: #4a5566;
-  --line: #cfd6de;
-  --iris: #4a43d1;
-  --iris-ink: #ffffff;
-  --iris-soft: #e2e0fb;
-  --focus: #4a43d1;
-  --ok: #2e7d52;
-  --warn: #9a4a10;
+  --haze: #eceff2;
+  --paper: #f8f9fa;
+  --paper-2: #e6eaee;
+  --ink: #131922;
+  --ink-2: #4a5361;
+  --line: #d2d8df;
+  --accent: #e9a23b; /* sodium amber: button fills, highlights */
+  --accent-ink: #1a1206; /* text on accent */
+  --accent-text: #8a4b05; /* accent as text on light surfaces */
+  --accent-soft: #f6e7cd;
+  --focus: #8a4b05;
+  --ok: #2b7a4f;
+  --warn: #9a420f;
+
+  /* Night sections (marketing story) are dark in both themes. */
+  --night: #0f131a;
+  --night-2: #181e28;
+  --mist: #c3ccd6;
+  --mist-2: #8d98a6;
+
+  /* Fixed chrome heights, shared by sticky elements below them. */
+  --header-h: 4rem;
+  --planbar-h: 4rem;
+
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --haze: #0f141b;
-    --paper: #161d27;
-    --paper-2: #1d2632;
-    --ink: #e8edf3;
-    --ink-2: #a5b0be;
-    --line: #2c3746;
-    --iris: #a29dff;
-    --iris-ink: #14112e;
-    --iris-soft: #2a2752;
-    --focus: #b8b4ff;
+    --haze: #0f131a;
+    --paper: #161c25;
+    --paper-2: #1e2531;
+    --ink: #e9edf2;
+    --ink-2: #a3adba;
+    --line: #2b3441;
+    --accent-text: #f0b450;
+    --accent-soft: #3a2b14;
+    --focus: #f0b450;
     --ok: #7fd3a4;
     --warn: #f2b37a;
     color-scheme: dark;
@@ -39,16 +72,15 @@
 }
 
 :root[data-theme="dark"] {
-  --haze: #0f141b;
-  --paper: #161d27;
-  --paper-2: #1d2632;
-  --ink: #e8edf3;
-  --ink-2: #a5b0be;
-  --line: #2c3746;
-  --iris: #a29dff;
-  --iris-ink: #14112e;
-  --iris-soft: #2a2752;
-  --focus: #b8b4ff;
+  --haze: #0f131a;
+  --paper: #161c25;
+  --paper-2: #1e2531;
+  --ink: #e9edf2;
+  --ink-2: #a3adba;
+  --line: #2b3441;
+  --accent-text: #f0b450;
+  --accent-soft: #3a2b14;
+  --focus: #f0b450;
   --ok: #7fd3a4;
   --warn: #f2b37a;
   color-scheme: dark;
@@ -61,12 +93,18 @@
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-line: var(--line);
-  --color-iris: var(--iris);
-  --color-iris-ink: var(--iris-ink);
-  --color-iris-soft: var(--iris-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
-  --font-sans: "Anek Latin", "Anek Devanagari", ui-sans-serif, system-ui, sans-serif;
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-mist: var(--mist);
+  --color-mist-2: var(--mist-2);
+  --font-sans: "Schibsted Grotesk Variable", "Anek Devanagari Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader Variable", "Tiro Devanagari Hindi", Georgia, serif;
   --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -74,8 +112,11 @@
   html {
     background: var(--haze);
     color: var(--ink);
+    /* WCAG 2.4.11: keyboard focus never lands hidden under the fixed header bars. */
+    scroll-padding-top: calc(var(--header-h) + var(--planbar-h) + 1rem);
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   body {
     margin: 0;
@@ -83,61 +124,77 @@
     background: var(--haze);
     font-family: var(--font-sans);
     font-size: 1.0625rem;
-    line-height: 1.55;
-    font-stretch: 100%;
+    line-height: 1.6;
   }
   :lang(hi) body {
-    line-height: 1.7;
+    line-height: 1.75;
   }
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 3px solid var(--focus);
-    outline-offset: 2px;
+    outline-offset: 3px;
     border-radius: 6px;
   }
+  .on-night :where(a, button, summary, [tabindex]):focus-visible {
+    outline-color: var(--accent);
+  }
   ::selection {
-    background: var(--iris);
-    color: var(--iris-ink);
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   dialog::backdrop {
-    background: rgb(15 20 27 / 0.55);
-    backdrop-filter: blur(3px);
+    background: rgb(10 13 18 / 0.6);
+    backdrop-filter: blur(4px);
   }
 }
 
 @layer components {
-  /* Condensed display type: the voice of the headline sentences. */
+  /* Editorial serif display. */
   .display {
-    font-stretch: 78%;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-optical-sizing: auto;
+    letter-spacing: -0.022em;
     line-height: 1.02;
     text-wrap: balance;
   }
-  /* Extra-wide numerals: the AQI reading reads like an instrument. */
+  :lang(hi) .display {
+    letter-spacing: 0;
+    line-height: 1.25;
+  }
+  /* The AQI reading: a large light serif numeral, like an instrument dial. */
   .numeral {
-    font-stretch: 125%;
+    font-family: var(--font-display);
     font-weight: 300;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.04em;
-    line-height: 0.85;
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.045em;
+    line-height: 0.82;
   }
   .section-title {
-    font-stretch: 85%;
-    font-weight: 600;
-    font-size: 1.75rem;
-    line-height: 1.1;
-    letter-spacing: -0.005em;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+  }
+  .lede {
+    font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+    line-height: 1.6;
   }
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     min-height: 2.75rem;
-    padding: 0.5rem 1.1rem;
+    padding: 0.55rem 1.2rem;
     border-radius: 999px;
-    font-weight: 550;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      border-color 0.25s,
+      transform 0.2s var(--ease-settle);
     cursor: pointer;
   }
   .btn:active {
@@ -148,11 +205,11 @@
     cursor: not-allowed;
   }
   .btn-primary {
-    background: var(--iris);
-    color: var(--iris-ink);
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   .btn-primary:hover:not(:disabled) {
-    background: color-mix(in oklab, var(--iris) 86%, var(--ink));
+    background: #f3b456;
   }
   .btn-quiet {
     border: 1px solid var(--line);
@@ -162,10 +219,20 @@
   .btn-quiet:hover:not(:disabled) {
     border-color: var(--ink-2);
   }
+  .btn-ghost-night {
+    border: 1px solid rgb(255 255 255 / 0.28);
+    color: #fff;
+    background: rgb(255 255 255 / 0.04);
+    backdrop-filter: blur(8px);
+  }
+  .btn-ghost-night:hover {
+    border-color: rgb(255 255 255 / 0.6);
+    background: rgb(255 255 255 / 0.1);
+  }
   .field {
     width: 100%;
     min-height: 2.75rem;
-    padding: 0.5rem 0.85rem;
+    padding: 0.5rem 0.9rem;
     border-radius: 12px;
     border: 1px solid var(--line);
     background: var(--paper);
@@ -175,40 +242,92 @@
     color: var(--ink-2);
     opacity: 0.8;
   }
-  /* Choice chips are real checkboxes/radios underneath, styled via :has(). */
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     min-height: 2.75rem;
-    padding: 0.45rem 0.95rem;
+    padding: 0.45rem 1rem;
     border-radius: 999px;
     border: 1px solid var(--line);
     background: var(--paper);
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.15s, border-color 0.15s;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
   }
   .chip:hover {
     border-color: var(--ink-2);
   }
   .chip:has(input:checked) {
-    background: var(--iris-soft);
-    border-color: var(--iris);
+    background: var(--accent-soft);
+    border-color: var(--accent-text);
   }
   .chip:has(input:focus-visible) {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
   }
   .chip input {
-    accent-color: var(--iris);
+    accent-color: var(--accent-text);
     width: 1.05rem;
     height: 1.05rem;
     margin: 0;
   }
+  /* Photo with a credit line, used across the story pages. */
+  .photo {
+    position: relative;
+    overflow: hidden;
+    background: var(--night-2);
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
 }
 
-/* The one orchestrated moment: smog settles over the skyline on load. */
+/* Readers who ask for more contrast get solid secondary text and firmer rules. */
+@media (prefers-contrast: more) {
+  :root:not(#contrast) {
+    --ink-2: var(--ink);
+    --line: color-mix(in oklab, var(--ink) 55%, transparent);
+    --mist: #ffffff;
+    --mist-2: #e4e8ed;
+  }
+  .btn-quiet,
+  .chip,
+  .field {
+    border-width: 2px;
+  }
+}
+
+/* Windows High Contrast: let system colours win, but keep controls outlined. */
+@media (forced-colors: active) {
+  .btn,
+  .chip,
+  .field {
+    border: 1px solid ButtonText;
+  }
+  .chip:has(input:checked) {
+    outline: 2px solid Highlight;
+  }
+  [data-band-swatch] {
+    forced-color-adjust: none;
+  }
+}
+
+/* The planner's one orchestrated moment: smog settles over the skyline. */
 @keyframes settle {
   from {
     opacity: 0;
@@ -228,6 +347,7 @@
   animation: lift 0.9s var(--ease-settle) both;
 }
 
+/* Before GSAP runs, story elements marked for reveal stay visible (no-JS safe). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -236,5 +356,57 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Print: the plan as a clean black-on-white sheet for the fridge door or a
+ * grandparent without a smartphone. `:not(#print)` lifts specificity above the
+ * dark-theme blocks without !important on every token.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  :root:not(#print) {
+    --haze: #fff;
+    --paper: #fff;
+    --paper-2: #f2f2f2;
+    --ink: #000;
+    --ink-2: #333;
+    --line: #bbb;
+    --accent-text: #000;
+    --accent-soft: #f2f2f2;
+    --night: #fff;
+    --night-2: #fff;
+    color-scheme: light;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  body > #root > header,
+  body > #root > footer,
+  dialog,
+  [data-sky-art],
+  figure.photo img {
+    display: none !important;
+  }
+  [data-sky] {
+    background: none !important;
+    color: #000 !important;
+  }
+  .on-night {
+    color: #000;
+  }
+  section,
+  li,
+  tr,
+  figure {
+    break-inside: avoid;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }

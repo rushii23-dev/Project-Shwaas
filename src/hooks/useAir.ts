@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AIR_TTL_MS, airCacheKey, fetchAir, fetchAirUncached } from "../lib/api/airQuality";
 import { isAbort, readCache, writeCache } from "../lib/api/http";
+import { isAirSnapshot } from "../lib/guards";
 import type { AirSnapshot, Place } from "../lib/types";
 
 export interface AirState {
@@ -23,7 +24,7 @@ export function useAir(place: Place): AirState {
   const [refreshing, setRefreshing] = useState(false);
 
   // Cached data for this place, read once per place.
-  const cachedSnap = useMemo(() => readCache<AirSnapshot>(key, AIR_TTL_MS)?.data ?? null, [key]);
+  const cachedSnap = useMemo(() => readCache(key, AIR_TTL_MS, isAirSnapshot)?.data ?? null, [key]);
   const snap = fetched?.key === key ? fetched.snap : cachedSnap ? { ...cachedSnap, place } : null;
 
   useEffect(() => {

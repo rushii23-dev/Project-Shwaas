@@ -66,7 +66,7 @@ describe("time windows", () => {
   });
 
   it("ignores night hours when choosing a window", () => {
-    const nightClean = makeHours([...Array(9).fill(150), 5, 5, 5, ...Array(12).fill(150)]);
+    const nightClean = makeHours([...Array<number>(9).fill(150), 5, 5, 5, ...Array<number>(12).fill(150)]);
     expect(bestWindow(nightClean, 2)!.start.hour).not.toBeLessThan(6);
   });
 
